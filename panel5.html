@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Exposure vs Outcome · Hormuz Data</title>
+  <script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js" charset="utf-8"></script>
+  <style>
+    /* Same frame as the conditional-forecast verification dashboard (../../dashboard/templates/_base.html);
+       charts greyscale-first as the project's figures. */
+    :root { --ink: #1F2A44; --accent: #1C7C4A; --grey: #6B7280; --grey-soft: #E5E7EB; --bg: #FFFFFF;
+            --ok: #1C7C4A; --flag: #B45309; --dark: #333333; --mid: #858585; --light: #B8B8B8; color-scheme: light; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.45; }
+    nav.topnav { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 22px; border-bottom: 1px solid var(--grey-soft);
+      padding: 12px max(16px, env(safe-area-inset-right, 0px)) 12px max(16px, env(safe-area-inset-left, 0px)); }
+    nav.topnav .brand { font-weight: 600; font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--grey); margin-right: 8px; }
+    nav.topnav a { text-decoration: none; color: var(--grey); font-size: 13px; padding: 3px 0; border-bottom: 2px solid transparent; }
+    nav.topnav a:hover { color: var(--ink); }
+    nav.topnav a.active { color: var(--ink); border-bottom-color: var(--accent); }
+    .wrap { max-width: 1180px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+    header.panel { padding-block: 18px 12px; border-bottom: 1px solid var(--grey-soft); }
+    header.panel .eyebrow { font-size: 12px; color: var(--grey); text-transform: uppercase; letter-spacing: 0.05em; }
+    header.panel h1 { margin: 4px 0 6px; font-size: 19px; font-weight: 600; text-wrap: balance; }
+    header.panel .sub { color: var(--grey); font-size: 13px; }
+    .pill { display: inline-block; margin: 2px 6px 2px 0; padding: 2px 8px; border-radius: 3px; font-size: 12px; font-weight: 600; }
+    .pill.pass { color: var(--ok); background: rgba(28,124,74,0.08); }
+    .pill.flag, .pill.fail { color: var(--flag); background: rgba(180,83,9,0.10); }
+    .pill.info { color: var(--ink); background: rgba(31,42,68,0.06); font-weight: 500; }
+    main { padding-block: 14px 24px; display: grid; gap: 16px; }
+    .controls { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; font-size: 13px; }
+    .controls select { font: inherit; padding: 4px 6px; border: 1px solid var(--grey-soft); border-radius: 4px; background: var(--bg); color: var(--ink); max-width: 100%; }
+    .summary { font-size: 13.5px; }
+    .summary b { font-variant-numeric: tabular-nums; }
+    .chart { width: 100%; min-height: 420px; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 860px) { .grid2 { grid-template-columns: 1fr; } }
+    .grid2 > * { min-width: 0; }
+    .tablewrap { overflow-x: auto; border: 1px solid var(--grey-soft); border-radius: 6px; }
+    table { border-collapse: collapse; width: 100%; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+    th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--grey-soft); vertical-align: top; }
+    th { color: var(--grey); font-weight: 600; background: #F9FAFB; position: sticky; top: 0; }
+    td.num, th.num { text-align: right; }
+    footer.panel { border-top: 1px solid var(--grey-soft); padding-block: 10px 28px; color: var(--grey); font-size: 12px; display: grid; gap: 6px; }
+    footer.panel code { font-size: 11.5px; }
+    footer.panel .sources { color: var(--ink); font-size: 12.5px; }
+    footer.panel .sources ul { margin: 4px 0 0; padding-left: 18px; display: grid; gap: 3px; }
+    footer.panel a { color: var(--accent); }
+    .wip a { color: #7C2D12; }
+    .wip { background: #FFF7ED; color: #7C2D12; border-bottom: 1px solid #FED7AA; font-size: 12.5px;
+           padding: 6px max(16px, env(safe-area-inset-right, 0px)) 6px max(16px, env(safe-area-inset-left, 0px)); }
+    .hero { display: grid; gap: 14px; padding-block: 8px 4px; }
+    .qs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 860px) { .qs { grid-template-columns: 1fr; } }
+    .q { border: 1px solid var(--grey-soft); border-left: 3px solid var(--accent); border-radius: 6px; padding: 12px 14px; display: grid; gap: 6px; min-width: 0; }
+    .q .k { font-size: 12px; color: var(--grey); text-transform: uppercase; letter-spacing: 0.05em; }
+    .q h2 { margin: 0; font-size: 16px; text-wrap: balance; }
+    .q p { margin: 0; font-size: 13.5px; }
+    details summary { cursor: pointer; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+    .card { border: 1px solid var(--grey-soft); border-radius: 8px; padding: 14px 16px; text-decoration: none; color: var(--ink); display: grid; gap: 6px; }
+    .card:hover { border-color: var(--accent); }
+    .card .k { font-size: 12px; color: var(--grey); text-transform: uppercase; letter-spacing: 0.05em; }
+    .card .t { font-weight: 600; }
+    .card .c { font-size: 13px; }
+    a:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  </style>
+</head>
+<body>
+  <div class="wip">Work in progress: preliminary results, revised as new data arrive. Comments welcome: <a href="https://github.com/alesmarsal/hormuz-incidence-dashboard/issues" target="_blank" rel="noopener">open an issue on GitHub</a>.</div>
+  <nav class="topnav">
+    <span class="brand">Hormuz incidence · data</span>
+    <a href="index.html" class="">Overview</a>
+    <a href="panel1.html" class="">Saudi windfall</a><a href="panel2.html" class="">Saudi budget &amp; reserves</a><a href="panel3.html" class="">Output vs income</a><a href="panel4.html" class="">13 exporters</a><a href="panel5.html" class="active">Exposure vs outcome</a><a href="panel6.html" class="">Data &amp; checks</a>
+  </nav>
+  <div class="wrap">
+    <header class="panel">
+      <div class="eyebrow">Q-B · Static exposure (M1) against realised incidence (M4) · data to Oct 2026 · built 2026-11-23</div>
+      <h1>The two most exposed, Kuwait (-2.8% of GDP) and Iraq (-1.1%), lost; correlation of exposure with outcome -0.34</h1>
+      <div class="sub">Left: 2025 net petroleum-liquids exports, % of GDP (a 10% price rise is worth one tenth of it), against the realised change in receipts, March–Oct 2026, % of 2025 GDP, pre-war EIA path. Right: net export volume against the pre-war path and against 2025, %. Small bases (Bahrain, Qatar, United States, Brazil) give large percentages.</div>
+      
+    </header>
+    <main><div class="grid2"><div id="c5a" class="chart" style="min-height:480px"></div><div id="c5b" class="chart" style="min-height:480px"></div></div></main>
+    <footer class="panel">
+      
+      
+      <div class="sources"><b>Data sources</b><ul><li><b>Petroleum-liquids production and consumption:</b> U.S. Energy Information Administration (EIA), <a href="https://www.eia.gov/outlooks/steo/outlook.php" target="_blank" rel="noopener">2 issues, latest: Short-Term Energy Outlook, November 2026</a> (released 2026-11-09 to 2026-11-10); Table 3c, PDF page 37.</li><li><b>Strait of Hormuz production shut-ins:</b> U.S. Energy Information Administration (EIA), <a href="https://www.eia.gov/outlooks/steo/outlook.php" target="_blank" rel="noopener">8 issues, latest: Short-Term Energy Outlook, November 2026</a> (released 2026-04-07 to 2026-11-10); Table 1 (Estimated Strait of Hormuz closure-related disruptions in crude oil production), PDF page 6.</li><li><b>Export prices:</b> U.S. Energy Information Administration (EIA), <a href="https://www.eia.gov/dnav/pet/hist/LeafHandler.ashx?n=PET&amp;s=RWTC&amp;f=D" target="_blank" rel="noopener">48 issues, latest: Cushing, OK WTI Spot Price FOB (Dollars per Barrel), Daily</a> (released 2024-03-12 to 2026-11-18); OPEC Monthly Oil Market Report, table &#39;Table 1 - 1: OPEC Reference Basket and selected crudes, US$/b&#39;.</li><li><b>Nominal GDP 2025, US dollars:</b> International Monetary Fund (IMF), <a href="https://data.imf.org/en/datasets/IMF.RES:WEO" target="_blank" rel="noopener">World Economic Outlook (WEO) database, current vintage (October 2026), 13 countries (P03), all indicators, annual</a> (released 2026-10-13); IMF WEO SDMX, indicator NGDPD.</li></ul></div>
+      
+      <details><summary>Archive: 26 source files behind this page (identifier, publisher, release date, retrieval date)</summary>
+        <div class="tablewrap" style="margin-top:6px"><table><thead><tr><th>Source id</th><th>Publisher</th><th>Release</th><th>Retrieved</th></tr></thead><tbody>
+        <tr><td><code>eia_intl_bulk_20261109</code></td><td>U.S. Energy Information Administration</td><td>2026-11-09</td><td>2026-11-18</td></tr><tr><td><code>eia_rbrte_daily_20261112</code></td><td>U.S. Energy Information Administration</td><td>2026-11-12</td><td>2026-11-17</td></tr><tr><td><code>eia_rwtc_daily_20261118</code></td><td>U.S. Energy Information Administration</td><td>2026-11-18</td><td>2026-11-19</td></tr><tr><td><code>eia_steo_202602_base</code></td><td>U.S. Energy Information Administration</td><td>2026-02-10</td><td>2026-09-30</td></tr><tr><td><code>eia_steo_202605_report</code></td><td>U.S. Energy Information Administration</td><td>2026-05-12</td><td>2026-09-30</td></tr><tr><td><code>eia_steo_202609_report</code></td><td>U.S. Energy Information Administration</td><td>2026-09-09</td><td>2026-09-30</td></tr><tr><td><code>eia_steo_202610_report</code></td><td>U.S. Energy Information Administration</td><td>2026-10-06</td><td>2026-11-17</td></tr><tr><td><code>eia_steo_202611_base</code></td><td>U.S. Energy Information Administration</td><td>2026-11-10</td><td>2026-11-17</td></tr><tr><td><code>gme_daily_bulletin_2026_07_31</code></td><td>Gulf Mercantile Exchange (bulletin produced by CME Group)</td><td>2026-07-31</td><td>2026-09-29</td></tr><tr><td><code>gme_daily_bulletin_2026_08_31</code></td><td>Gulf Mercantile Exchange (bulletin produced by CME Group)</td><td>2026-08-31</td><td>2026-09-29</td></tr><tr><td><code>imf_weo_current_13c_20261118</code></td><td>International Monetary Fund, Research Department (World Economic Outlook database, via the IMF SDMX 2.1 API)</td><td>2026-10-13</td><td>2026-11-18</td></tr><tr><td><code>mof_qbpr_2025q4_en</code></td><td>Ministry of Finance, Saudi Arabia</td><td>2026-02-23</td><td>2026-09-29</td></tr><tr><td><code>mof_qbpr_2026q1_en</code></td><td>Ministry of Finance, Saudi Arabia</td><td>2026-05-05</td><td>2026-09-29</td></tr><tr><td><code>mof_qbpr_2026q2_en</code></td><td>Ministry of Finance, Saudi Arabia</td><td>2026-07-30</td><td>2026-09-29</td></tr><tr><td><code>mof_qbpr_2026q3_tables</code></td><td>Ministry of Finance, Saudi Arabia</td><td>2026-11-03</td><td>2026-11-17</td></tr><tr><td><code>ncsi_msb_2026_06</code></td><td>National Centre for Statistics and Information, Sultanate of Oman</td><td>2026-07-02</td><td>2026-09-29</td></tr><tr><td><code>ncsi_msb_2026_07</code></td><td>National Centre for Statistics and Information, Sultanate of Oman</td><td>2026-07-20</td><td>2026-09-29</td></tr><tr><td><code>ncsi_msb_2026_08</code></td><td>National Centre for Statistics and Information, Sultanate of Oman</td><td>2026-08-23</td><td>2026-09-29</td></tr><tr><td><code>ncsi_msb_2026_09</code></td><td>National Centre for Statistics and Information, Sultanate of Oman</td><td>2026-09-27</td><td>2026-09-29</td></tr><tr><td><code>opec_momr_2026_05</code></td><td>OPEC</td><td>2026-05-13</td><td>2026-09-29</td></tr><tr><td><code>opec_momr_2026_06</code></td><td>OPEC</td><td>2026-06-11</td><td>2026-09-29</td></tr><tr><td><code>opec_momr_2026_07</code></td><td>OPEC</td><td>2026-07-13</td><td>2026-09-29</td></tr><tr><td><code>opec_momr_2026_08</code></td><td>OPEC</td><td>2026-08-12</td><td>2026-09-29</td></tr><tr><td><code>opec_momr_2026_09</code></td><td>OPEC</td><td>2026-09-10</td><td>2026-10-01</td></tr><tr><td><code>opec_momr_2026_10</code></td><td>OPEC</td><td>2026-10-13</td><td>2026-11-17</td></tr><tr><td><code>opec_momr_2026_11</code></td><td>OPEC</td><td>2026-11-11</td><td>2026-11-18</td></tr>
+        </tbody></table></div></details>
+      
+      <div>Every number is calculated from the public releases listed above. The archived source files (with release and retrieval dates and checksums), the code and the checks are kept in the project's repository and are available on request. Author's calculations.</div>
+      
+      
+    </footer>
+  </div>
+  <script>
+    const GREY = {dark: "#333333", mid: "#858585", light: "#B8B8B8", ink: "#1a1a1a", grid: "#E5E7EB", muted: "#6B7280"};
+    const CFG = {displaylogo: false, responsive: true, modeBarButtonsToRemove: ["lasso2d", "select2d"]};
+    function baseLayout(extra) {
+      return Object.assign({font: {family: "-apple-system, Segoe UI, Helvetica, Arial, sans-serif", size: 12, color: "#1F2A44"},
+        paper_bgcolor: "#FFFFFF", plot_bgcolor: "#FFFFFF", margin: {l: 60, r: 20, t: 30, b: 50},
+        legend: {orientation: "h", y: 1.08, x: 0}, hovermode: "closest"}, extra || {});
+    }
+    function fmt(v, n) { return (v === null || v === undefined) ? "–" : (v > 0 ? "+" : "") + v.toFixed(n === undefined ? 1 : n); }
+  </script>
+  
+<script>
+const D = {"rows": [{"iso3": "sau", "country": "Saudi Arabia", "exposure": 15.33, "m1": 1.53, "outcome": 1.33, "hormuz": true, "shutin": 34.0, "vol": -40.8, "vol25": -35.9}, {"iso3": "are", "country": "UAE", "exposure": 14.34, "m1": 1.43, "outcome": 3.96, "hormuz": true, "shutin": 40.0, "vol": -16.4, "vol25": -12.7}, {"iso3": "kwt", "country": "Kuwait", "exposure": 38.65, "m1": 3.87, "outcome": -2.79, "hormuz": true, "shutin": 80.0, "vol": -55.1, "vol25": -53.4}, {"iso3": "qat", "country": "Qatar", "exposure": 18.82, "m1": 1.88, "outcome": -6.7, "hormuz": true, "shutin": 90.0, "vol": -82.4, "vol25": -82.1}, {"iso3": "bhr", "country": "Bahrain", "exposure": 6.27, "m1": 0.63, "outcome": -1.91, "hormuz": true, "shutin": 93.0, "vol": -82.2, "vol25": -84.0}, {"iso3": "omn", "country": "Oman", "exposure": 18.49, "m1": 1.85, "outcome": 6.14, "hormuz": false, "shutin": null, "vol": 5.5, "vol25": 10.4}, {"iso3": "irq", "country": "Iraq", "exposure": 32.77, "m1": 3.28, "outcome": -1.09, "hormuz": true, "shutin": 73.0, "vol": -50.9, "vol25": -51.2}, {"iso3": "irn", "country": "Iran", "exposure": 18.92, "m1": 1.89, "outcome": 0.69, "hormuz": true, "shutin": 35.0, "vol": -46.0, "vol25": -48.5}, {"iso3": "usa", "country": "United States", "exposure": 0.23, "m1": 0.02, "outcome": 0.15, "hormuz": false, "shutin": null, "vol": 18.7, "vol25": 24.8}, {"iso3": "nor", "country": "Norway", "exposure": 8.71, "m1": 0.87, "outcome": 3.79, "hormuz": false, "shutin": null, "vol": -2.3, "vol25": -0.9}, {"iso3": "can", "country": "Canada", "exposure": 3.81, "m1": 0.38, "outcome": 1.76, "hormuz": false, "shutin": null, "vol": 3.0, "vol25": 2.9}, {"iso3": "bra", "country": "Brazil", "exposure": 1.53, "m1": 0.15, "outcome": 1.41, "hormuz": false, "shutin": null, "vol": 22.7, "vol25": 67.9}, {"iso3": "rus", "country": "Russia", "exposure": 5.16, "m1": 0.52, "outcome": 3.0, "hormuz": false, "shutin": null, "vol": -5.2, "vol25": -3.7}], "title": "The two most exposed, Kuwait (-2.8% of GDP) and Iraq (-1.1%), lost; correlation of exposure with outcome -0.34", "corr": -0.34, "tables": ["output/tables/p03_exposure_m1.csv", "output/tables/p03_incidence_prewar_steo.csv"], "sources": ["eia_intl_bulk_20261109", "eia_rbrte_daily_20261112", "eia_rwtc_daily_20261118", "eia_steo_202602_base", "eia_steo_202605_report", "eia_steo_202609_report", "eia_steo_202610_report", "eia_steo_202611_base", "gme_daily_bulletin_2026_07_31", "gme_daily_bulletin_2026_08_31", "imf_weo_current_13c_20261118", "mof_qbpr_2025q4_en", "mof_qbpr_2026q1_en", "mof_qbpr_2026q2_en", "mof_qbpr_2026q3_tables", "ncsi_msb_2026_06", "ncsi_msb_2026_07", "ncsi_msb_2026_08", "ncsi_msb_2026_09", "opec_momr_2026_05", "opec_momr_2026_06", "opec_momr_2026_07", "opec_momr_2026_08", "opec_momr_2026_09", "opec_momr_2026_10", "opec_momr_2026_11"], "vintages": [{"id": "eia_intl_bulk_20261109", "publisher": "U.S. Energy Information Administration", "release": "2026-11-09", "retrieved": "2026-11-18"}, {"id": "eia_rbrte_daily_20261112", "publisher": "U.S. Energy Information Administration", "release": "2026-11-12", "retrieved": "2026-11-17"}, {"id": "eia_rwtc_daily_20261118", "publisher": "U.S. Energy Information Administration", "release": "2026-11-18", "retrieved": "2026-11-19"}, {"id": "eia_steo_202602_base", "publisher": "U.S. Energy Information Administration", "release": "2026-02-10", "retrieved": "2026-09-30"}, {"id": "eia_steo_202605_report", "publisher": "U.S. Energy Information Administration", "release": "2026-05-12", "retrieved": "2026-09-30"}, {"id": "eia_steo_202609_report", "publisher": "U.S. Energy Information Administration", "release": "2026-09-09", "retrieved": "2026-09-30"}, {"id": "eia_steo_202610_report", "publisher": "U.S. Energy Information Administration", "release": "2026-10-06", "retrieved": "2026-11-17"}, {"id": "eia_steo_202611_base", "publisher": "U.S. Energy Information Administration", "release": "2026-11-10", "retrieved": "2026-11-17"}, {"id": "gme_daily_bulletin_2026_07_31", "publisher": "Gulf Mercantile Exchange (bulletin produced by CME Group)", "release": "2026-07-31", "retrieved": "2026-09-29"}, {"id": "gme_daily_bulletin_2026_08_31", "publisher": "Gulf Mercantile Exchange (bulletin produced by CME Group)", "release": "2026-08-31", "retrieved": "2026-09-29"}, {"id": "imf_weo_current_13c_20261118", "publisher": "International Monetary Fund, Research Department (World Economic Outlook database, via the IMF SDMX 2.1 API)", "release": "2026-10-13", "retrieved": "2026-11-18"}, {"id": "mof_qbpr_2025q4_en", "publisher": "Ministry of Finance, Saudi Arabia", "release": "2026-02-23", "retrieved": "2026-09-29"}, {"id": "mof_qbpr_2026q1_en", "publisher": "Ministry of Finance, Saudi Arabia", "release": "2026-05-05", "retrieved": "2026-09-29"}, {"id": "mof_qbpr_2026q2_en", "publisher": "Ministry of Finance, Saudi Arabia", "release": "2026-07-30", "retrieved": "2026-09-29"}, {"id": "mof_qbpr_2026q3_tables", "publisher": "Ministry of Finance, Saudi Arabia", "release": "2026-11-03", "retrieved": "2026-11-17"}, {"id": "ncsi_msb_2026_06", "publisher": "National Centre for Statistics and Information, Sultanate of Oman", "release": "2026-07-02", "retrieved": "2026-09-29"}, {"id": "ncsi_msb_2026_07", "publisher": "National Centre for Statistics and Information, Sultanate of Oman", "release": "2026-07-20", "retrieved": "2026-09-29"}, {"id": "ncsi_msb_2026_08", "publisher": "National Centre for Statistics and Information, Sultanate of Oman", "release": "2026-08-23", "retrieved": "2026-09-29"}, {"id": "ncsi_msb_2026_09", "publisher": "National Centre for Statistics and Information, Sultanate of Oman", "release": "2026-09-27", "retrieved": "2026-09-29"}, {"id": "opec_momr_2026_05", "publisher": "OPEC", "release": "2026-05-13", "retrieved": "2026-09-29"}, {"id": "opec_momr_2026_06", "publisher": "OPEC", "release": "2026-06-11", "retrieved": "2026-09-29"}, {"id": "opec_momr_2026_07", "publisher": "OPEC", "release": "2026-07-13", "retrieved": "2026-09-29"}, {"id": "opec_momr_2026_08", "publisher": "OPEC", "release": "2026-08-12", "retrieved": "2026-09-29"}, {"id": "opec_momr_2026_09", "publisher": "OPEC", "release": "2026-09-10", "retrieved": "2026-10-01"}, {"id": "opec_momr_2026_10", "publisher": "OPEC", "release": "2026-10-13", "retrieved": "2026-11-17"}, {"id": "opec_momr_2026_11", "publisher": "OPEC", "release": "2026-11-11", "retrieved": "2026-11-18"}], "data_sources": [{"what": "Petroleum-liquids production and consumption", "publisher": "U.S. Energy Information Administration (EIA)", "publication": "2 issues, latest: Short-Term Energy Outlook, November 2026", "table": "Table 3c, PDF page 37", "released": "2026-11-09 to 2026-11-10", "link": "https://www.eia.gov/outlooks/steo/outlook.php"}, {"what": "Strait of Hormuz production shut-ins", "publisher": "U.S. Energy Information Administration (EIA)", "publication": "8 issues, latest: Short-Term Energy Outlook, November 2026", "table": "Table 1 (Estimated Strait of Hormuz closure-related disruptions in crude oil production), PDF page 6", "released": "2026-04-07 to 2026-11-10", "link": "https://www.eia.gov/outlooks/steo/outlook.php"}, {"what": "Export prices", "publisher": "U.S. Energy Information Administration (EIA)", "publication": "48 issues, latest: Cushing, OK WTI Spot Price FOB (Dollars per Barrel), Daily", "table": "OPEC Monthly Oil Market Report, table 'Table 1 - 1: OPEC Reference Basket and selected crudes, US$/b'", "released": "2024-03-12 to 2026-11-18", "link": "https://www.eia.gov/dnav/pet/hist/LeafHandler.ashx?n=PET&s=RWTC&f=D"}, {"what": "Nominal GDP 2025, US dollars", "publisher": "International Monetary Fund (IMF)", "publication": "World Economic Outlook (WEO) database, current vintage (October 2026), 13 countries (P03), all indicators, annual", "table": "IMF WEO SDMX, indicator NGDPD", "released": "2026-10-13", "link": "https://data.imf.org/en/datasets/IMF.RES:WEO"}]};
+const hz = D.rows.filter(r => r.hormuz), no = D.rows.filter(r => !r.hormuz);
+const sc = (rs, n, sym, col) => ({type: "scatter", mode: "markers+text", name: n, x: rs.map(r => r.exposure), y: rs.map(r => r.outcome), text: rs.map(r => r.country),
+  textposition: "top right", textfont: {size: 11}, marker: {symbol: sym, size: 12, color: col, line: {color: GREY.ink, width: 1}},
+  customdata: rs.map(r => [r.m1, r.shutin]), hovertemplate: "%{text}<br>exposure %{x:.1f}% of GDP (10% rise: %{customdata[0]:.2f}%)<br>outcome %{y:+.2f}% of GDP<extra></extra>"});
+Plotly.newPlot("c5a", [sc(hz, "Hormuz shut-in reported by EIA", "circle", GREY.dark), sc(no, "No Hormuz shut-in", "square", GREY.light)],
+  baseLayout({xaxis: {title: "Net liquids exports 2025, % of GDP", gridcolor: GREY.grid}, yaxis: {title: "Change in receipts, % of 2025 GDP", zeroline: true, zerolinecolor: GREY.muted, gridcolor: GREY.grid},
+              title: {text: "Correlation " + fmt(D.corr, 2), font: {size: 13}}}), CFG);
+const rs = D.rows.slice().sort((a, b) => a.vol - b.vol);
+Plotly.newPlot("c5b", [
+  {type: "bar", orientation: "h", name: "vs pre-war path", y: rs.map(r => r.country), x: rs.map(r => r.vol), marker: {color: rs.map(r => r.vol < 0 ? GREY.dark : GREY.light)}, hovertemplate: "%{y}: %{x:+.1f}% vs pre-war path<extra></extra>"},
+  {type: "scatter", mode: "markers", name: "vs 2025 average", y: rs.map(r => r.country), x: rs.map(r => r.vol25), marker: {color: GREY.ink, size: 8, line: {color: "#fff", width: 1.5}}, hovertemplate: "%{y}: %{x:+.1f}% vs 2025<extra></extra>"}
+], baseLayout({margin: {l: 110, r: 20, t: 30, b: 50}, xaxis: {title: "% change in net export volume", zeroline: true, zerolinecolor: GREY.muted, gridcolor: GREY.grid}}), CFG);
+</script>
+
+</body>
+</html>

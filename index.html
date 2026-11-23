@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hormuz Incidence Data</title>
+  <script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js" charset="utf-8"></script>
+  <style>
+    /* Same frame as the conditional-forecast verification dashboard (../../dashboard/templates/_base.html);
+       charts greyscale-first as the project's figures. */
+    :root { --ink: #1F2A44; --accent: #1C7C4A; --grey: #6B7280; --grey-soft: #E5E7EB; --bg: #FFFFFF;
+            --ok: #1C7C4A; --flag: #B45309; --dark: #333333; --mid: #858585; --light: #B8B8B8; color-scheme: light; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.45; }
+    nav.topnav { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 22px; border-bottom: 1px solid var(--grey-soft);
+      padding: 12px max(16px, env(safe-area-inset-right, 0px)) 12px max(16px, env(safe-area-inset-left, 0px)); }
+    nav.topnav .brand { font-weight: 600; font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--grey); margin-right: 8px; }
+    nav.topnav a { text-decoration: none; color: var(--grey); font-size: 13px; padding: 3px 0; border-bottom: 2px solid transparent; }
+    nav.topnav a:hover { color: var(--ink); }
+    nav.topnav a.active { color: var(--ink); border-bottom-color: var(--accent); }
+    .wrap { max-width: 1180px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+    header.panel { padding-block: 18px 12px; border-bottom: 1px solid var(--grey-soft); }
+    header.panel .eyebrow { font-size: 12px; color: var(--grey); text-transform: uppercase; letter-spacing: 0.05em; }
+    header.panel h1 { margin: 4px 0 6px; font-size: 19px; font-weight: 600; text-wrap: balance; }
+    header.panel .sub { color: var(--grey); font-size: 13px; }
+    .pill { display: inline-block; margin: 2px 6px 2px 0; padding: 2px 8px; border-radius: 3px; font-size: 12px; font-weight: 600; }
+    .pill.pass { color: var(--ok); background: rgba(28,124,74,0.08); }
+    .pill.flag, .pill.fail { color: var(--flag); background: rgba(180,83,9,0.10); }
+    .pill.info { color: var(--ink); background: rgba(31,42,68,0.06); font-weight: 500; }
+    main { padding-block: 14px 24px; display: grid; gap: 16px; }
+    .controls { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; font-size: 13px; }
+    .controls select { font: inherit; padding: 4px 6px; border: 1px solid var(--grey-soft); border-radius: 4px; background: var(--bg); color: var(--ink); max-width: 100%; }
+    .summary { font-size: 13.5px; }
+    .summary b { font-variant-numeric: tabular-nums; }
+    .chart { width: 100%; min-height: 420px; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 860px) { .grid2 { grid-template-columns: 1fr; } }
+    .grid2 > * { min-width: 0; }
+    .tablewrap { overflow-x: auto; border: 1px solid var(--grey-soft); border-radius: 6px; }
+    table { border-collapse: collapse; width: 100%; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+    th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--grey-soft); vertical-align: top; }
+    th { color: var(--grey); font-weight: 600; background: #F9FAFB; position: sticky; top: 0; }
+    td.num, th.num { text-align: right; }
+    footer.panel { border-top: 1px solid var(--grey-soft); padding-block: 10px 28px; color: var(--grey); font-size: 12px; display: grid; gap: 6px; }
+    footer.panel code { font-size: 11.5px; }
+    footer.panel .sources { color: var(--ink); font-size: 12.5px; }
+    footer.panel .sources ul { margin: 4px 0 0; padding-left: 18px; display: grid; gap: 3px; }
+    footer.panel a { color: var(--accent); }
+    .wip a { color: #7C2D12; }
+    .wip { background: #FFF7ED; color: #7C2D12; border-bottom: 1px solid #FED7AA; font-size: 12.5px;
+           padding: 6px max(16px, env(safe-area-inset-right, 0px)) 6px max(16px, env(safe-area-inset-left, 0px)); }
+    .hero { display: grid; gap: 14px; padding-block: 8px 4px; }
+    .qs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 860px) { .qs { grid-template-columns: 1fr; } }
+    .q { border: 1px solid var(--grey-soft); border-left: 3px solid var(--accent); border-radius: 6px; padding: 12px 14px; display: grid; gap: 6px; min-width: 0; }
+    .q .k { font-size: 12px; color: var(--grey); text-transform: uppercase; letter-spacing: 0.05em; }
+    .q h2 { margin: 0; font-size: 16px; text-wrap: balance; }
+    .q p { margin: 0; font-size: 13.5px; }
+    details summary { cursor: pointer; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+    .card { border: 1px solid var(--grey-soft); border-radius: 8px; padding: 14px 16px; text-decoration: none; color: var(--ink); display: grid; gap: 6px; }
+    .card:hover { border-color: var(--accent); }
+    .card .k { font-size: 12px; color: var(--grey); text-transform: uppercase; letter-spacing: 0.05em; }
+    .card .t { font-weight: 600; }
+    .card .c { font-size: 13px; }
+    a:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  </style>
+</head>
+<body>
+  <div class="wip">Work in progress: preliminary results, revised as new data arrive. Comments welcome: <a href="https://github.com/alesmarsal/hormuz-incidence-dashboard/issues" target="_blank" rel="noopener">open an issue on GitHub</a>.</div>
+  <nav class="topnav">
+    <span class="brand">Hormuz incidence · data</span>
+    <a href="index.html" class="active">Overview</a>
+    <a href="panel1.html" class="">Saudi windfall</a><a href="panel2.html" class="">Saudi budget &amp; reserves</a><a href="panel3.html" class="">Output vs income</a><a href="panel4.html" class="">13 exporters</a><a href="panel5.html" class="">Exposure vs outcome</a><a href="panel6.html" class="">Data &amp; checks</a>
+  </nav>
+  <div class="wrap">
+    <header class="panel">
+      <div class="eyebrow">Hormuz incidence project · data to Oct 2026 · built 2026-11-23</div>
+      <h1>Who gained and who lost from the 2026 oil shock?</h1>
+      <div class="sub">The 2026 war closed the Strait of Hormuz for months. Oil prices doubled, but Gulf exporters lost much of their export volume. This dashboard tracks two questions with public data, updated as new releases come out.</div>
+      
+    </header>
+    <main>
+<div class="hero">
+  <div class="qs">
+    <div class="q"><span class="k">Question A · Saudi Arabia</span>
+      <h2>How large was Saudi Arabia's oil windfall once lost export volume is netted out, and how was it used?</h2>
+      <p>So far: crude export receipts were <b>USD +24.3 bn</b> above the pre-war path in March–Oct 2026 (+1.91% of 2025 GDP), but only +6.5 bn above the same months of 2025. Official reserves were -108.4 SAR bn lower than in February.</p>
+      <p><a href="panel1.html">Windfall</a> · <a href="panel2.html">Budget and reserves</a> · <a href="panel3.html">Output against income</a></p></div>
+    <div class="q"><span class="k">Question B · 13 oil exporters</span>
+      <h2>How exposed are oil exporters to oil prices, and where did the 2026 shock leave each of them?</h2>
+      <p>So far: Comparators gained USD 216 bn, the eight Gulf exporters together 28 bn (March–Oct 2026); Kuwait, Qatar, Bahrain and Iraq lost under every baseline. The two most exposed, Kuwait (-2.8% of GDP) and Iraq (-1.1%), lost; correlation of exposure with outcome -0.34.</p>
+      <p><a href="panel4.html">13 exporters</a> · <a href="panel5.html">Exposure against outcome</a></p></div>
+  </div>
+  <h2 style="font-size:15px;margin:6px 0 0">Overview</h2>
+  <div class="cards">
+    
+    <a class="card" href="panel1.html"><span class="k">Saudi windfall</span><span class="t">USD 24.3 bn above the pre-war path, March–Oct 2026: higher prices outweighed the lost barrels in every war month but July</span><span class="c">Saudi crude export receipts against the pre-war path, by month and baseline</span></a>
+    
+    <a class="card" href="panel2.html"><span class="k">Saudi budget &amp; reserves</span><span class="t">Oil revenue -6.0 and spending +86.3 SAR bn in 2026Q1–Q3 against a year earlier; reserves -108.4 SAR bn since February</span><span class="c">Oil revenue, spending, reserves and government deposits</span></a>
+    
+    <a class="card" href="panel3.html"><span class="k">Output vs income</span><span class="t">Real GDP -10.4% since 2025Q4; real GDI (CPI-deflated) +3.4% (2026Q2)</span><span class="c">Real GDP against real GDI</span></a>
+    
+    <a class="card" href="panel4.html"><span class="k">13 exporters</span><span class="t">Comparators gained USD 216 bn, the eight Gulf exporters together 28 bn (March–Oct 2026); Kuwait, Qatar, Bahrain and Iraq lost under every baseline</span><span class="c">Who gained and who lost on oil export receipts, with the range across baselines</span></a>
+    
+    <a class="card" href="panel5.html"><span class="k">Exposure vs outcome</span><span class="t">The two most exposed, Kuwait (-2.8% of GDP) and Iraq (-1.1%), lost; correlation of exposure with outcome -0.34</span><span class="c">Static exposure against realised incidence; export volumes</span></a>
+    
+    <a class="card" href="panel6.html"><span class="k">Data &amp; checks</span><span class="t">595 archived source files, 8,651 series; 10 of 15 checks pass, the rest are flags</span><span class="c">Coverage, freshness and the project&#39;s checks</span></a>
+    
+  </div>
+</div>
+</main>
+    <footer class="panel">
+      <div>Every number comes from public statistical releases (OPEC, EIA, JODI, IMF, SAMA, Ministry of Finance, GASTAT and national sources); each page lists its data sources and tables. Data to Oct 2026. Gas and LNG are not yet included.</div>
+    </footer>
+  </div>
+  <script>
+    const GREY = {dark: "#333333", mid: "#858585", light: "#B8B8B8", ink: "#1a1a1a", grid: "#E5E7EB", muted: "#6B7280"};
+    const CFG = {displaylogo: false, responsive: true, modeBarButtonsToRemove: ["lasso2d", "select2d"]};
+    function baseLayout(extra) {
+      return Object.assign({font: {family: "-apple-system, Segoe UI, Helvetica, Arial, sans-serif", size: 12, color: "#1F2A44"},
+        paper_bgcolor: "#FFFFFF", plot_bgcolor: "#FFFFFF", margin: {l: 60, r: 20, t: 30, b: 50},
+        legend: {orientation: "h", y: 1.08, x: 0}, hovermode: "closest"}, extra || {});
+    }
+    function fmt(v, n) { return (v === null || v === undefined) ? "–" : (v > 0 ? "+" : "") + v.toFixed(n === undefined ? 1 : n); }
+  </script>
+  
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Saudi Budget & Reserves · Hormuz Data</title>
+  <script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js" charset="utf-8"></script>
+  <style>
+    /* Same frame as the conditional-forecast verification dashboard (../../dashboard/templates/_base.html);
+       charts greyscale-first as the project's figures. */
+    :root { --ink: #1F2A44; --accent: #1C7C4A; --grey: #6B7280; --grey-soft: #E5E7EB; --bg: #FFFFFF;
+            --ok: #1C7C4A; --flag: #B45309; --dark: #333333; --mid: #858585; --light: #B8B8B8; color-scheme: light; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.45; }
+    nav.topnav { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 22px; border-bottom: 1px solid var(--grey-soft);
+      padding: 12px max(16px, env(safe-area-inset-right, 0px)) 12px max(16px, env(safe-area-inset-left, 0px)); }
+    nav.topnav .brand { font-weight: 600; font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--grey); margin-right: 8px; }
+    nav.topnav a { text-decoration: none; color: var(--grey); font-size: 13px; padding: 3px 0; border-bottom: 2px solid transparent; }
+    nav.topnav a:hover { color: var(--ink); }
+    nav.topnav a.active { color: var(--ink); border-bottom-color: var(--accent); }
+    .wrap { max-width: 1180px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+    header.panel { padding-block: 18px 12px; border-bottom: 1px solid var(--grey-soft); }
+    header.panel .eyebrow { font-size: 12px; color: var(--grey); text-transform: uppercase; letter-spacing: 0.05em; }
+    header.panel h1 { margin: 4px 0 6px; font-size: 19px; font-weight: 600; text-wrap: balance; }
+    header.panel .sub { color: var(--grey); font-size: 13px; }
+    .pill { display: inline-block; margin: 2px 6px 2px 0; padding: 2px 8px; border-radius: 3px; font-size: 12px; font-weight: 600; }
+    .pill.pass { color: var(--ok); background: rgba(28,124,74,0.08); }
+    .pill.flag, .pill.fail { color: var(--flag); background: rgba(180,83,9,0.10); }
+    .pill.info { color: var(--ink); background: rgba(31,42,68,0.06); font-weight: 500; }
+    main { padding-block: 14px 24px; display: grid; gap: 16px; }
+    .controls { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; font-size: 13px; }
+    .controls select { font: inherit; padding: 4px 6px; border: 1px solid var(--grey-soft); border-radius: 4px; background: var(--bg); color: var(--ink); max-width: 100%; }
+    .summary { font-size: 13.5px; }
+    .summary b { font-variant-numeric: tabular-nums; }
+    .chart { width: 100%; min-height: 420px; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 860px) { .grid2 { grid-template-columns: 1fr; } }
+    .grid2 > * { min-width: 0; }
+    .tablewrap { overflow-x: auto; border: 1px solid var(--grey-soft); border-radius: 6px; }
+    table { border-collapse: collapse; width: 100%; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+    th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--grey-soft); vertical-align: top; }
+    th { color: var(--grey); font-weight: 600; background: #F9FAFB; position: sticky; top: 0; }
+    td.num, th.num { text-align: right; }
+    footer.panel { border-top: 1px solid var(--grey-soft); padding-block: 10px 28px; color: var(--grey); font-size: 12px; display: grid; gap: 6px; }
+    footer.panel code { font-size: 11.5px; }
+    footer.panel .sources { color: var(--ink); font-size: 12.5px; }
+    footer.panel .sources ul { margin: 4px 0 0; padding-left: 18px; display: grid; gap: 3px; }
+    footer.panel a { color: var(--accent); }
+    .wip a { color: #7C2D12; }
+    .wip { background: #FFF7ED; color: #7C2D12; border-bottom: 1px solid #FED7AA; font-size: 12.5px;
+           padding: 6px max(16px, env(safe-area-inset-right, 0px)) 6px max(16px, env(safe-area-inset-left, 0px)); }
+    .hero { display: grid; gap: 14px; padding-block: 8px 4px; }
+    .qs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 860px) { .qs { grid-template-columns: 1fr; } }
+    .q { border: 1px solid var(--grey-soft); border-left: 3px solid var(--accent); border-radius: 6px; padding: 12px 14px; display: grid; gap: 6px; min-width: 0; }
+    .q .k { font-size: 12px; color: var(--grey); text-transform: uppercase; letter-spacing: 0.05em; }
+    .q h2 { margin: 0; font-size: 16px; text-wrap: balance; }
+    .q p { margin: 0; font-size: 13.5px; }
+    details summary { cursor: pointer; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+    .card { border: 1px solid var(--grey-soft); border-radius: 8px; padding: 14px 16px; text-decoration: none; color: var(--ink); display: grid; gap: 6px; }
+    .card:hover { border-color: var(--accent); }
+    .card .k { font-size: 12px; color: var(--grey); text-transform: uppercase; letter-spacing: 0.05em; }
+    .card .t { font-weight: 600; }
+    .card .c { font-size: 13px; }
+    a:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  </style>
+</head>
+<body>
+  <div class="wip">Work in progress: preliminary results, revised as new data arrive. Comments welcome: <a href="https://github.com/alesmarsal/hormuz-incidence-dashboard/issues" target="_blank" rel="noopener">open an issue on GitHub</a>.</div>
+  <nav class="topnav">
+    <span class="brand">Hormuz incidence · data</span>
+    <a href="index.html" class="">Overview</a>
+    <a href="panel1.html" class="">Saudi windfall</a><a href="panel2.html" class="active">Saudi budget &amp; reserves</a><a href="panel3.html" class="">Output vs income</a><a href="panel4.html" class="">13 exporters</a><a href="panel5.html" class="">Exposure vs outcome</a><a href="panel6.html" class="">Data &amp; checks</a>
+  </nav>
+  <div class="wrap">
+    <header class="panel">
+      <div class="eyebrow">Q-A · How the windfall was used · data to Oct 2026 · built 2026-11-23</div>
+      <h1>Oil revenue -6.0 and spending +86.3 SAR bn in 2026Q1–Q3 against a year earlier; reserves -108.4 SAR bn since February</h1>
+      <div class="sub">Left: central government oil revenue, non-oil revenue and total expenditure by quarter, SAR bn (Ministry of Finance). Right: SAMA official reserve assets (left axis) and government deposits at SAMA (right axis), end of month, SAR bn. Dotted line: last month or quarter before the war.</div>
+      <div><span class="pill pass" title="MoF fiscal tables close - revenue components sum to total revenue; expenditure items sum to total (economic and sectoral classification); balance = revenue - expenditure. 774 identity-periods in 6 identities; max gap 0.00001 in &#39;non-oil revenue: taxes (income and profits, goods and services, trade, other) + other revenue = non-oil&#39; 2019Q3 (mof_qbpr_2019q3_en); 0 above threshold">G1.2 pass · 1.33e-05</span></div>
+    </header>
+    <main>
+<div class="grid2"><div id="c2a" class="chart"></div><div id="c2b" class="chart"></div></div>
+<div class="summary" id="s2"></div>
+</main>
+    <footer class="panel">
+      
+      
+      <div class="sources"><b>Data sources</b><ul><li><b>Oil revenue, non-oil revenue, total expenditure:</b> Ministry of Finance, Saudi Arabia, <a href="https://www.mof.gov.sa/en/w/budget-performance-report-2026" target="_blank" rel="noopener">7 issues, latest: Quarterly Budget Performance Report Q3 2026 (Excel format)</a> (released 2025-05-05 to 2026-11-03); MoF Quarterly Budget Performance Report: Revenues.</li><li><b>Official reserve assets:</b> Saudi Central Bank (SAMA), <a href="https://www.mof.gov.sa/en/statistics" target="_blank" rel="noopener">National Summary Data Page, Official Reserve Assets</a> (released 2026-11-17); NSDP Official Reserve Assets (SDMX, DATA_DOMAIN ILV1), indicator RAFA_XDC.</li><li><b>Government deposits at SAMA:</b> Saudi Central Bank (SAMA), <a href="https://www.sama.gov.sa/en-US/Statistics/Pages/MonthlyStatistics.aspx" target="_blank" rel="noopener">Monthly Statistical Bulletin, September 2026</a> (released 2026-10-27); SAMA Monthly Statistical Bulletin, table 8b.</li></ul></div>
+      
+      <details><summary>Archive: 9 source files behind this page (identifier, publisher, release date, retrieval date)</summary>
+        <div class="tablewrap" style="margin-top:6px"><table><thead><tr><th>Source id</th><th>Publisher</th><th>Release</th><th>Retrieved</th></tr></thead><tbody>
+        <tr><td><code>mof_qbpr_2025q1_en</code></td><td>Ministry of Finance, Saudi Arabia</td><td>2025-05-05</td><td>2026-09-29</td></tr><tr><td><code>mof_qbpr_2025q2_en</code></td><td>Ministry of Finance, Saudi Arabia</td><td>2025-07-31</td><td>2026-09-29</td></tr><tr><td><code>mof_qbpr_2025q3_en</code></td><td>Ministry of Finance, Saudi Arabia</td><td>2025-10-30</td><td>2026-09-29</td></tr><tr><td><code>mof_qbpr_2025q4_en</code></td><td>Ministry of Finance, Saudi Arabia</td><td>2026-02-23</td><td>2026-09-29</td></tr><tr><td><code>mof_qbpr_2026q1_en</code></td><td>Ministry of Finance, Saudi Arabia</td><td>2026-05-05</td><td>2026-09-29</td></tr><tr><td><code>mof_qbpr_2026q2_en</code></td><td>Ministry of Finance, Saudi Arabia</td><td>2026-07-30</td><td>2026-09-29</td></tr><tr><td><code>mof_qbpr_2026q3_tables</code></td><td>Ministry of Finance, Saudi Arabia</td><td>2026-11-03</td><td>2026-11-17</td></tr><tr><td><code>sama_msb_2026_09</code></td><td>Saudi Central Bank (SAMA)</td><td>2026-10-27</td><td>2026-11-19</td></tr><tr><td><code>sama_nsdp_ora_20261119</code></td><td>Kingdom of Saudi Arabia, National Summary Data Page (IMF SDDS), hosted by the Ministry of Finance; monetary and reserves statistics of the Saudi Central Bank (SAMA)</td><td>2026-11-17</td><td>2026-11-19</td></tr>
+        </tbody></table></div></details>
+      
+      <div>Every number is calculated from the public releases listed above. The archived source files (with release and retrieval dates and checksums), the code and the checks are kept in the project's repository and are available on request. Author's calculations.</div>
+      
+      
+    </footer>
+  </div>
+  <script>
+    const GREY = {dark: "#333333", mid: "#858585", light: "#B8B8B8", ink: "#1a1a1a", grid: "#E5E7EB", muted: "#6B7280"};
+    const CFG = {displaylogo: false, responsive: true, modeBarButtonsToRemove: ["lasso2d", "select2d"]};
+    function baseLayout(extra) {
+      return Object.assign({font: {family: "-apple-system, Segoe UI, Helvetica, Arial, sans-serif", size: 12, color: "#1F2A44"},
+        paper_bgcolor: "#FFFFFF", plot_bgcolor: "#FFFFFF", margin: {l: 60, r: 20, t: 30, b: 50},
+        legend: {orientation: "h", y: 1.08, x: 0}, hovermode: "closest"}, extra || {});
+    }
+    function fmt(v, n) { return (v === null || v === undefined) ? "–" : (v > 0 ? "+" : "") + v.toFixed(n === undefined ? 1 : n); }
+  </script>
+  
+<script>
+const D = {"fiscal": {"Oil revenue": {"periods": ["2024Q1", "2024Q2", "2024Q3", "2024Q4", "2025Q1", "2025Q2", "2025Q3", "2025Q4", "2026Q1", "2026Q2", "2026Q3"], "values": [181.9, 213.0, 190.9, 170.8, 149.8, 151.7, 150.8, 154.2, 144.7, 185.1, 116.5]}, "Non-oil revenue": {"periods": ["2024Q1", "2024Q2", "2024Q3", "2024Q4", "2025Q1", "2025Q2", "2025Q3", "2025Q4", "2026Q1", "2026Q2", "2026Q3"], "values": [111.5, 140.6, 118.3, 132.0, 113.8, 149.9, 119.1, 122.6, 116.3, 153.7, 142.6]}, "Total expenditure": {"periods": ["2024Q1", "2024Q2", "2024Q3", "2024Q4", "2025Q1", "2025Q2", "2025Q3", "2025Q4", "2026Q1", "2026Q2", "2026Q3"], "values": [305.8, 368.9, 339.4, 360.5, 322.3, 336.1, 358.4, 371.6, 386.7, 373.1, 343.4]}}, "external": {"SAMA official reserve assets": {"periods": ["2025-01", "2025-02", "2025-03", "2025-04", "2025-05", "2025-06", "2025-07", "2025-08", "2025-09", "2025-10", "2025-11", "2025-12", "2026-01", "2026-02", "2026-03", "2026-04", "2026-05", "2026-06", "2026-07", "2026-08", "2026-09", "2026-10"], "values": [1628.8, 1623.7, 1703.6, 1647.5, 1721.1, 1716.3, 1665.3, 1712.4, 1689.4, 1659.2, 1739.6, 1725.9, 1784.5, 1786.2, 1862.4, 1855.9, 1831.1, 1854.6, 1832.4, 1827.4, 1746.3, 1677.8], "since_feb": -108.4, "last": "2026-10"}, "Government deposits at SAMA": {"periods": ["2025-01", "2025-02", "2025-03", "2025-04", "2025-05", "2025-06", "2025-07", "2025-08", "2025-09", "2025-10", "2025-11", "2025-12", "2026-01", "2026-02", "2026-03", "2026-04", "2026-05", "2026-06", "2026-07", "2026-08", "2026-09"], "values": [463.2, 423.2, 483.0, 468.7, 506.3, 485.3, 453.7, 467.6, 438.4, 448.9, 447.9, 431.8, 448.6, 388.3, 437.2, 438.8, 409.8, 432.6, 374.2, 401.6, 368.4], "since_feb": -19.9, "last": "2026-09"}}, "title": "Oil revenue -6.0 and spending +86.3 SAR bn in 2026Q1–Q3 against a year earlier; reserves -108.4 SAR bn since February", "sources": ["mof_qbpr_2025q1_en", "mof_qbpr_2025q2_en", "mof_qbpr_2025q3_en", "mof_qbpr_2025q4_en", "mof_qbpr_2026q1_en", "mof_qbpr_2026q2_en", "mof_qbpr_2026q3_tables", "sama_msb_2026_09", "sama_nsdp_ora_20261119"], "tables": ["data/processed/ksa_quarterly.csv (fiscal.*)", "output/tables/p02_external_monthly.csv"], "gates": [{"check": "G1.2", "status": "pass", "value": "1.33e-05", "threshold": "0.005", "description": "MoF fiscal tables close - revenue components sum to total revenue; expenditure items sum to total (economic and sectoral classification); balance = revenue - expenditure.", "detail": "774 identity-periods in 6 identities; max gap 0.00001 in 'non-oil revenue: taxes (income and profits, goods and services, trade, other) + other revenue = non-oil' 2019Q3 (mof_qbpr_2019q3_en); 0 above threshold"}], "vintages": [{"id": "mof_qbpr_2025q1_en", "publisher": "Ministry of Finance, Saudi Arabia", "release": "2025-05-05", "retrieved": "2026-09-29"}, {"id": "mof_qbpr_2025q2_en", "publisher": "Ministry of Finance, Saudi Arabia", "release": "2025-07-31", "retrieved": "2026-09-29"}, {"id": "mof_qbpr_2025q3_en", "publisher": "Ministry of Finance, Saudi Arabia", "release": "2025-10-30", "retrieved": "2026-09-29"}, {"id": "mof_qbpr_2025q4_en", "publisher": "Ministry of Finance, Saudi Arabia", "release": "2026-02-23", "retrieved": "2026-09-29"}, {"id": "mof_qbpr_2026q1_en", "publisher": "Ministry of Finance, Saudi Arabia", "release": "2026-05-05", "retrieved": "2026-09-29"}, {"id": "mof_qbpr_2026q2_en", "publisher": "Ministry of Finance, Saudi Arabia", "release": "2026-07-30", "retrieved": "2026-09-29"}, {"id": "mof_qbpr_2026q3_tables", "publisher": "Ministry of Finance, Saudi Arabia", "release": "2026-11-03", "retrieved": "2026-11-17"}, {"id": "sama_msb_2026_09", "publisher": "Saudi Central Bank (SAMA)", "release": "2026-10-27", "retrieved": "2026-11-19"}, {"id": "sama_nsdp_ora_20261119", "publisher": "Kingdom of Saudi Arabia, National Summary Data Page (IMF SDDS), hosted by the Ministry of Finance; monetary and reserves statistics of the Saudi Central Bank (SAMA)", "release": "2026-11-17", "retrieved": "2026-11-19"}], "data_sources": [{"what": "Oil revenue, non-oil revenue, total expenditure", "publisher": "Ministry of Finance, Saudi Arabia", "publication": "7 issues, latest: Quarterly Budget Performance Report Q3 2026 (Excel format)", "table": "MoF Quarterly Budget Performance Report: Revenues", "released": "2025-05-05 to 2026-11-03", "link": "https://www.mof.gov.sa/en/w/budget-performance-report-2026"}, {"what": "Official reserve assets", "publisher": "Saudi Central Bank (SAMA)", "publication": "National Summary Data Page, Official Reserve Assets", "table": "NSDP Official Reserve Assets (SDMX, DATA_DOMAIN ILV1), indicator RAFA_XDC", "released": "2026-11-17", "link": "https://www.mof.gov.sa/en/statistics"}, {"what": "Government deposits at SAMA", "publisher": "Saudi Central Bank (SAMA)", "publication": "Monthly Statistical Bulletin, September 2026", "table": "SAMA Monthly Statistical Bulletin, table 8b", "released": "2026-10-27", "link": "https://www.sama.gov.sa/en-US/Statistics/Pages/MonthlyStatistics.aspx"}]};
+const cols = [GREY.dark, GREY.light, GREY.mid];
+Plotly.newPlot("c2a", Object.entries(D.fiscal).map(([k, v], i) => ({type: "bar", name: k, x: v.periods, y: v.values, marker: {color: cols[i]},
+  hovertemplate: k + " %{x}: %{y:,.1f} SAR bn<extra></extra>"})),
+  baseLayout({barmode: "group", legend: {orientation: "h", y: 1.12, x: 0}, yaxis: {title: "SAR bn", gridcolor: GREY.grid}, shapes: [{type: "line", x0: "2026Q1", x1: "2026Q1", xref: "x", yref: "paper", y0: 0, y1: 1, line: {color: GREY.muted, dash: "dot", width: 1}}]}), CFG);
+const ex = Object.entries(D.external);
+Plotly.newPlot("c2b", ex.map(([k, v], i) => ({type: "scatter", mode: "lines+markers", name: k, x: v.periods, y: v.values, yaxis: i ? "y2" : "y",
+  line: {color: i ? GREY.mid : GREY.dark, width: 2.5}, marker: {size: 5}, hovertemplate: k + " %{x}: %{y:,.1f} SAR bn<extra></extra>"})),
+  baseLayout({legend: {orientation: "h", y: 1.12, x: 0}, margin: {l: 60, r: 60, t: 30, b: 50}, yaxis: {title: "Reserves, SAR bn", gridcolor: GREY.grid},
+    yaxis2: {title: "Deposits, SAR bn", overlaying: "y", side: "right", showgrid: false},
+    shapes: [{type: "line", x0: "2026-02", x1: "2026-02", xref: "x", yref: "paper", y0: 0, y1: 1, line: {color: GREY.muted, dash: "dot", width: 1}}]}), CFG);
+document.getElementById("s2").innerHTML = ex.map(([k, v]) => `${k}: <b>${fmt(v.since_feb)}</b> SAR bn since February 2026 (latest ${v.last})`).join(" · ");
+</script>
+
+</body>
+</html>

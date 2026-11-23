@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Output vs Income · Hormuz Data</title>
+  <script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js" charset="utf-8"></script>
+  <style>
+    /* Same frame as the conditional-forecast verification dashboard (../../dashboard/templates/_base.html);
+       charts greyscale-first as the project's figures. */
+    :root { --ink: #1F2A44; --accent: #1C7C4A; --grey: #6B7280; --grey-soft: #E5E7EB; --bg: #FFFFFF;
+            --ok: #1C7C4A; --flag: #B45309; --dark: #333333; --mid: #858585; --light: #B8B8B8; color-scheme: light; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.45; }
+    nav.topnav { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 22px; border-bottom: 1px solid var(--grey-soft);
+      padding: 12px max(16px, env(safe-area-inset-right, 0px)) 12px max(16px, env(safe-area-inset-left, 0px)); }
+    nav.topnav .brand { font-weight: 600; font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--grey); margin-right: 8px; }
+    nav.topnav a { text-decoration: none; color: var(--grey); font-size: 13px; padding: 3px 0; border-bottom: 2px solid transparent; }
+    nav.topnav a:hover { color: var(--ink); }
+    nav.topnav a.active { color: var(--ink); border-bottom-color: var(--accent); }
+    .wrap { max-width: 1180px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+    header.panel { padding-block: 18px 12px; border-bottom: 1px solid var(--grey-soft); }
+    header.panel .eyebrow { font-size: 12px; color: var(--grey); text-transform: uppercase; letter-spacing: 0.05em; }
+    header.panel h1 { margin: 4px 0 6px; font-size: 19px; font-weight: 600; text-wrap: balance; }
+    header.panel .sub { color: var(--grey); font-size: 13px; }
+    .pill { display: inline-block; margin: 2px 6px 2px 0; padding: 2px 8px; border-radius: 3px; font-size: 12px; font-weight: 600; }
+    .pill.pass { color: var(--ok); background: rgba(28,124,74,0.08); }
+    .pill.flag, .pill.fail { color: var(--flag); background: rgba(180,83,9,0.10); }
+    .pill.info { color: var(--ink); background: rgba(31,42,68,0.06); font-weight: 500; }
+    main { padding-block: 14px 24px; display: grid; gap: 16px; }
+    .controls { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; font-size: 13px; }
+    .controls select { font: inherit; padding: 4px 6px; border: 1px solid var(--grey-soft); border-radius: 4px; background: var(--bg); color: var(--ink); max-width: 100%; }
+    .summary { font-size: 13.5px; }
+    .summary b { font-variant-numeric: tabular-nums; }
+    .chart { width: 100%; min-height: 420px; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 860px) { .grid2 { grid-template-columns: 1fr; } }
+    .grid2 > * { min-width: 0; }
+    .tablewrap { overflow-x: auto; border: 1px solid var(--grey-soft); border-radius: 6px; }
+    table { border-collapse: collapse; width: 100%; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+    th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--grey-soft); vertical-align: top; }
+    th { color: var(--grey); font-weight: 600; background: #F9FAFB; position: sticky; top: 0; }
+    td.num, th.num { text-align: right; }
+    footer.panel { border-top: 1px solid var(--grey-soft); padding-block: 10px 28px; color: var(--grey); font-size: 12px; display: grid; gap: 6px; }
+    footer.panel code { font-size: 11.5px; }
+    footer.panel .sources { color: var(--ink); font-size: 12.5px; }
+    footer.panel .sources ul { margin: 4px 0 0; padding-left: 18px; display: grid; gap: 3px; }
+    footer.panel a { color: var(--accent); }
+    .wip a { color: #7C2D12; }
+    .wip { background: #FFF7ED; color: #7C2D12; border-bottom: 1px solid #FED7AA; font-size: 12.5px;
+           padding: 6px max(16px, env(safe-area-inset-right, 0px)) 6px max(16px, env(safe-area-inset-left, 0px)); }
+    .hero { display: grid; gap: 14px; padding-block: 8px 4px; }
+    .qs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 860px) { .qs { grid-template-columns: 1fr; } }
+    .q { border: 1px solid var(--grey-soft); border-left: 3px solid var(--accent); border-radius: 6px; padding: 12px 14px; display: grid; gap: 6px; min-width: 0; }
+    .q .k { font-size: 12px; color: var(--grey); text-transform: uppercase; letter-spacing: 0.05em; }
+    .q h2 { margin: 0; font-size: 16px; text-wrap: balance; }
+    .q p { margin: 0; font-size: 13.5px; }
+    details summary { cursor: pointer; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+    .card { border: 1px solid var(--grey-soft); border-radius: 8px; padding: 14px 16px; text-decoration: none; color: var(--ink); display: grid; gap: 6px; }
+    .card:hover { border-color: var(--accent); }
+    .card .k { font-size: 12px; color: var(--grey); text-transform: uppercase; letter-spacing: 0.05em; }
+    .card .t { font-weight: 600; }
+    .card .c { font-size: 13px; }
+    a:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  </style>
+</head>
+<body>
+  <div class="wip">Work in progress: preliminary results, revised as new data arrive. Comments welcome: <a href="https://github.com/alesmarsal/hormuz-incidence-dashboard/issues" target="_blank" rel="noopener">open an issue on GitHub</a>.</div>
+  <nav class="topnav">
+    <span class="brand">Hormuz incidence · data</span>
+    <a href="index.html" class="">Overview</a>
+    <a href="panel1.html" class="">Saudi windfall</a><a href="panel2.html" class="">Saudi budget &amp; reserves</a><a href="panel3.html" class="active">Output vs income</a><a href="panel4.html" class="">13 exporters</a><a href="panel5.html" class="">Exposure vs outcome</a><a href="panel6.html" class="">Data &amp; checks</a>
+  </nav>
+  <div class="wrap">
+    <header class="panel">
+      <div class="eyebrow">Q-A · Income is not volume · data to Oct 2026 · built 2026-11-23</div>
+      <h1>Real GDP -10.4% since 2025Q4; real GDI (CPI-deflated) +3.4% (2026Q2)</h1>
+      <div class="sub">Index, 2025Q4 = 100, not seasonally adjusted. Real GDP: chain-linked volume. Real GDI: nominal GDP deflated by the CPI. SNA real GDI: real GDP plus the trading gain (CPI as reference deflator).</div>
+      <div><span class="pill pass" title="National accounts close - nominal GDP by activity sums to total; expenditure components sum to total up to the published statistical discrepancy. 774 identity-periods in 3 identities; max gap 0.00000 in &#39;GDP at current prices by expenditure: C + G + GFCF + inventories + X - M = GDP (no published discrepancy)&#39; 2015Q4 (gastat_na_2025q3_revised); 0 above threshold">G1.3 pass · 3.32e-06</span></div>
+    </header>
+    <main><div id="c3" class="chart"></div></main>
+    <footer class="panel">
+      
+      
+      <div class="sources"><b>Data sources</b><ul><li><b>Nominal and real GDP (chain-linked):</b> General Authority for Statistics (GASTAT), <a href="https://www.stats.gov.sa/en/statistics-tabs/-/categories/120038?tab=436312&amp;category=120038" target="_blank" rel="noopener">GDP and National Accounts Q2/2026</a> (released 2026-09-08); table 1.1: gross domestic product by main economic activities at current prices (million ).</li><li><b>Consumer price index:</b> General Authority for Statistics (GASTAT), <a href="https://www.stats.gov.sa/en/statistics-tabs?tab=436312&amp;category=121421" target="_blank" rel="noopener">Consumer Price Index – August 2026</a> (released 2026-09-15); GASTAT CPI monthly tables, index series by expenditure category (sheet 5.1).</li></ul></div>
+      
+      <details><summary>Archive: 2 source files behind this page (identifier, publisher, release date, retrieval date)</summary>
+        <div class="tablewrap" style="margin-top:6px"><table><thead><tr><th>Source id</th><th>Publisher</th><th>Release</th><th>Retrieved</th></tr></thead><tbody>
+        <tr><td><code>gastat_cpi_tables_202608</code></td><td>General Authority for Statistics (GASTAT), Saudi Arabia</td><td>2026-09-15</td><td>2026-09-29</td></tr><tr><td><code>gastat_na_2026q2_revised</code></td><td>General Authority for Statistics (GASTAT), Saudi Arabia</td><td>2026-09-08</td><td>2026-09-29</td></tr>
+        </tbody></table></div></details>
+      
+      <div>Every number is calculated from the public releases listed above. The archived source files (with release and retrieval dates and checksums), the code and the checks are kept in the project's repository and are available on request. Author's calculations.</div>
+      
+      
+    </footer>
+  </div>
+  <script>
+    const GREY = {dark: "#333333", mid: "#858585", light: "#B8B8B8", ink: "#1a1a1a", grid: "#E5E7EB", muted: "#6B7280"};
+    const CFG = {displaylogo: false, responsive: true, modeBarButtonsToRemove: ["lasso2d", "select2d"]};
+    function baseLayout(extra) {
+      return Object.assign({font: {family: "-apple-system, Segoe UI, Helvetica, Arial, sans-serif", size: 12, color: "#1F2A44"},
+        paper_bgcolor: "#FFFFFF", plot_bgcolor: "#FFFFFF", margin: {l: 60, r: 20, t: 30, b: 50},
+        legend: {orientation: "h", y: 1.08, x: 0}, hovermode: "closest"}, extra || {});
+    }
+    function fmt(v, n) { return (v === null || v === undefined) ? "–" : (v > 0 ? "+" : "") + v.toFixed(n === undefined ? 1 : n); }
+  </script>
+  
+<script>
+const D = {"periods": ["2024Q1", "2024Q2", "2024Q3", "2024Q4", "2025Q1", "2025Q2", "2025Q3", "2025Q4", "2026Q1", "2026Q2"], "gdp": [91.3, 90.1, 91.5, 95.0, 94.6, 94.0, 96.3, 100.0, 97.4, 89.6], "gdi": [99.3, 100.8, 98.9, 100.1, 100.4, 97.9, 98.8, 100.0, 105.0, 103.4], "gdi_sna": [94.7, 94.2, 96.0, 96.1, 97.1, 94.8, 99.7, 100.0, 100.6, 97.4], "title": "Real GDP -10.4% since 2025Q4; real GDI (CPI-deflated) +3.4% (2026Q2)", "sources": ["gastat_cpi_tables_202608", "gastat_na_2026q2_revised"], "tables": ["output/tables/p02_real_gdi_vs_gdp.csv"], "gates": [{"check": "G1.3", "status": "pass", "value": "3.32e-06", "threshold": "0.002", "description": "National accounts close - nominal GDP by activity sums to total; expenditure components sum to total up to the published statistical discrepancy.", "detail": "774 identity-periods in 3 identities; max gap 0.00000 in 'GDP at current prices by expenditure: C + G + GFCF + inventories + X - M = GDP (no published discrepancy)' 2015Q4 (gastat_na_2025q3_revised); 0 above threshold"}], "vintages": [{"id": "gastat_cpi_tables_202608", "publisher": "General Authority for Statistics (GASTAT), Saudi Arabia", "release": "2026-09-15", "retrieved": "2026-09-29"}, {"id": "gastat_na_2026q2_revised", "publisher": "General Authority for Statistics (GASTAT), Saudi Arabia", "release": "2026-09-08", "retrieved": "2026-09-29"}], "data_sources": [{"what": "Nominal and real GDP (chain-linked)", "publisher": "General Authority for Statistics (GASTAT)", "publication": "GDP and National Accounts Q2/2026", "table": "table 1.1: gross domestic product by main economic activities at current prices (million )", "released": "2026-09-08", "link": "https://www.stats.gov.sa/en/statistics-tabs/-/categories/120038?tab=436312&category=120038"}, {"what": "Consumer price index", "publisher": "General Authority for Statistics (GASTAT)", "publication": "Consumer Price Index – August 2026", "table": "GASTAT CPI monthly tables, index series by expenditure category (sheet 5.1)", "released": "2026-09-15", "link": "https://www.stats.gov.sa/en/statistics-tabs?tab=436312&category=121421"}]};
+const tr = [["Real GDI (nominal GDP / CPI)", D.gdi, GREY.ink], ["SNA real GDI", D.gdi_sna, GREY.mid], ["Real GDP", D.gdp, GREY.light]];
+Plotly.newPlot("c3", tr.map(([n, y, c]) => ({type: "scatter", mode: "lines+markers", name: n, x: D.periods, y: y, line: {color: c, width: 3}, marker: {size: 6},
+  hovertemplate: n + " %{x}: %{y:.1f}<extra></extra>"})),
+  baseLayout({yaxis: {title: "Index, 2025Q4 = 100", gridcolor: GREY.grid},
+    shapes: [{type: "rect", x0: "2025Q4", x1: "2026Q1", xref: "x", yref: "paper", y0: 0, y1: 1, fillcolor: "#E5E7EB", opacity: 0.5, line: {width: 0}}],
+    annotations: [{x: "2026Q1", y: 1, xref: "x", yref: "paper", text: "war from March 2026", showarrow: false, yanchor: "bottom", font: {size: 11, color: GREY.muted}}]}), CFG);
+</script>
+
+</body>
+</html>

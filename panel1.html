@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Saudi Windfall · Hormuz Data</title>
+  <script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js" charset="utf-8"></script>
+  <style>
+    /* Same frame as the conditional-forecast verification dashboard (../../dashboard/templates/_base.html);
+       charts greyscale-first as the project's figures. */
+    :root { --ink: #1F2A44; --accent: #1C7C4A; --grey: #6B7280; --grey-soft: #E5E7EB; --bg: #FFFFFF;
+            --ok: #1C7C4A; --flag: #B45309; --dark: #333333; --mid: #858585; --light: #B8B8B8; color-scheme: light; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; background: var(--bg); color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.45; }
+    nav.topnav { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 22px; border-bottom: 1px solid var(--grey-soft);
+      padding: 12px max(16px, env(safe-area-inset-right, 0px)) 12px max(16px, env(safe-area-inset-left, 0px)); }
+    nav.topnav .brand { font-weight: 600; font-size: 12px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--grey); margin-right: 8px; }
+    nav.topnav a { text-decoration: none; color: var(--grey); font-size: 13px; padding: 3px 0; border-bottom: 2px solid transparent; }
+    nav.topnav a:hover { color: var(--ink); }
+    nav.topnav a.active { color: var(--ink); border-bottom-color: var(--accent); }
+    .wrap { max-width: 1180px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+    header.panel { padding-block: 18px 12px; border-bottom: 1px solid var(--grey-soft); }
+    header.panel .eyebrow { font-size: 12px; color: var(--grey); text-transform: uppercase; letter-spacing: 0.05em; }
+    header.panel h1 { margin: 4px 0 6px; font-size: 19px; font-weight: 600; text-wrap: balance; }
+    header.panel .sub { color: var(--grey); font-size: 13px; }
+    .pill { display: inline-block; margin: 2px 6px 2px 0; padding: 2px 8px; border-radius: 3px; font-size: 12px; font-weight: 600; }
+    .pill.pass { color: var(--ok); background: rgba(28,124,74,0.08); }
+    .pill.flag, .pill.fail { color: var(--flag); background: rgba(180,83,9,0.10); }
+    .pill.info { color: var(--ink); background: rgba(31,42,68,0.06); font-weight: 500; }
+    main { padding-block: 14px 24px; display: grid; gap: 16px; }
+    .controls { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; font-size: 13px; }
+    .controls select { font: inherit; padding: 4px 6px; border: 1px solid var(--grey-soft); border-radius: 4px; background: var(--bg); color: var(--ink); max-width: 100%; }
+    .summary { font-size: 13.5px; }
+    .summary b { font-variant-numeric: tabular-nums; }
+    .chart { width: 100%; min-height: 420px; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 860px) { .grid2 { grid-template-columns: 1fr; } }
+    .grid2 > * { min-width: 0; }
+    .tablewrap { overflow-x: auto; border: 1px solid var(--grey-soft); border-radius: 6px; }
+    table { border-collapse: collapse; width: 100%; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+    th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--grey-soft); vertical-align: top; }
+    th { color: var(--grey); font-weight: 600; background: #F9FAFB; position: sticky; top: 0; }
+    td.num, th.num { text-align: right; }
+    footer.panel { border-top: 1px solid var(--grey-soft); padding-block: 10px 28px; color: var(--grey); font-size: 12px; display: grid; gap: 6px; }
+    footer.panel code { font-size: 11.5px; }
+    footer.panel .sources { color: var(--ink); font-size: 12.5px; }
+    footer.panel .sources ul { margin: 4px 0 0; padding-left: 18px; display: grid; gap: 3px; }
+    footer.panel a { color: var(--accent); }
+    .wip a { color: #7C2D12; }
+    .wip { background: #FFF7ED; color: #7C2D12; border-bottom: 1px solid #FED7AA; font-size: 12.5px;
+           padding: 6px max(16px, env(safe-area-inset-right, 0px)) 6px max(16px, env(safe-area-inset-left, 0px)); }
+    .hero { display: grid; gap: 14px; padding-block: 8px 4px; }
+    .qs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 860px) { .qs { grid-template-columns: 1fr; } }
+    .q { border: 1px solid var(--grey-soft); border-left: 3px solid var(--accent); border-radius: 6px; padding: 12px 14px; display: grid; gap: 6px; min-width: 0; }
+    .q .k { font-size: 12px; color: var(--grey); text-transform: uppercase; letter-spacing: 0.05em; }
+    .q h2 { margin: 0; font-size: 16px; text-wrap: balance; }
+    .q p { margin: 0; font-size: 13.5px; }
+    details summary { cursor: pointer; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+    .card { border: 1px solid var(--grey-soft); border-radius: 8px; padding: 14px 16px; text-decoration: none; color: var(--ink); display: grid; gap: 6px; }
+    .card:hover { border-color: var(--accent); }
+    .card .k { font-size: 12px; color: var(--grey); text-transform: uppercase; letter-spacing: 0.05em; }
+    .card .t { font-weight: 600; }
+    .card .c { font-size: 13px; }
+    a:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  </style>
+</head>
+<body>
+  <div class="wip">Work in progress: preliminary results, revised as new data arrive. Comments welcome: <a href="https://github.com/alesmarsal/hormuz-incidence-dashboard/issues" target="_blank" rel="noopener">open an issue on GitHub</a>.</div>
+  <nav class="topnav">
+    <span class="brand">Hormuz incidence · data</span>
+    <a href="index.html" class="">Overview</a>
+    <a href="panel1.html" class="active">Saudi windfall</a><a href="panel2.html" class="">Saudi budget &amp; reserves</a><a href="panel3.html" class="">Output vs income</a><a href="panel4.html" class="">13 exporters</a><a href="panel5.html" class="">Exposure vs outcome</a><a href="panel6.html" class="">Data &amp; checks</a>
+  </nav>
+  <div class="wrap">
+    <header class="panel">
+      <div class="eyebrow">Q-A · Saudi crude export receipts · data to Oct 2026 · built 2026-11-23</div>
+      <h1>USD 24.3 bn above the pre-war path, March–Oct 2026: higher prices outweighed the lost barrels in every war month but July</h1>
+      <div class="sub">Receipts = Arab Light price × crude exports × days. Change against the pre-war path, split exactly into a price effect and a volume effect (midpoint). Months JODI has not yet published are estimated (D-019) and carry a range (D-025, D-027).</div>
+      <div><span class="pill pass" title="Price and volume effects sum exactly to the windfall (midpoint decomposition). 260 gaps over 5 tables (midpoint, alternative, first order with cross term, Brent / differential split of the price effect); max 1.49e-14 in c1c 2026-07 (g21_gap_price_split)">G2.1 pass · 1.49e-14</span><span class="pill pass" title="Every windfall number carries exactly one baseline; no table mixes baselines. 28 tables; distinct baselines per table: max 1">G2.3 pass · 1</span></div>
+    </header>
+    <main>
+<div class="controls"><label for="b1">Pre-war path</label>
+  <select id="b1"><option value="c1a">OPEC+ required production (c1a, headline)</option><option value="c1b">c1b: with the April increase</option><option value="c1c">c1c: January–February level</option><option value="yoy">Same month of 2025 (yoy)</option><option value="c1a_brent">c1a at Brent prices</option></select></div>
+<div class="summary" id="s1"></div>
+<div id="c1" class="chart"></div>
+<div class="tablewrap"><table id="t1"><thead><tr><th>Month</th><th class="num">Arab Light (P)</th><th class="num">Pre-war price (Pc)</th><th class="num">Exports, kb/d (X)</th><th class="num">Pre-war exports (Xc)</th><th class="num">Price effect</th><th class="num">Volume effect</th><th class="num">Net, USD bn</th><th>Note</th></tr></thead><tbody></tbody></table></div>
+</main>
+    <footer class="panel">
+      
+      
+      <div class="sources"><b>Data sources</b><ul><li><b>Arab Light price:</b> OPEC, <a href="https://www.opec.org/monthly-oil-market-report.html" target="_blank" rel="noopener">33 issues, latest: OPEC Monthly Oil Market Report – November 2026</a> (released 2024-03-12 to 2026-11-11); OPEC Monthly Oil Market Report, table &#39;Table 1 - 1: OPEC Reference Basket and selected crudes, US$/b&#39;, row &#39;Arab Light&#39;.</li><li><b>Saudi crude exports and production (published months):</b> JODI (Joint Organisations Data Initiative), <a href="https://www.jodidata.org/oil/database/data-downloads.aspx" target="_blank" rel="noopener">JODI-Oil World Database, world primary table</a> (released 2026-10-21); JODI-Oil World Database, primary table: REF_AREA=SA, ENERGY_PRODUCT=CRUDEOIL, FLOW_BREAKDOWN=TOTEXPSB, UNIT_MEASURE=KBD.</li><li><b>Saudi crude production, OPEC secondary sources (estimated months):</b> OPEC, <a href="https://www.opec.org/monthly-oil-market-report.html" target="_blank" rel="noopener">32 issues, latest: OPEC Monthly Oil Market Report – November 2026</a> (released 2024-04-11 to 2026-11-11); OPEC Monthly Oil Market Report, table &#39;OPEC (from May 2024: DoC) crude oil production based on secondary sources, tb/d&#39;, row &#39;Saudi Arabia&#39;.</li><li><b>Saudi supply to the market, direct communication (range):</b> OPEC, <a href="https://www.opec.org/monthly-oil-market-report.html" target="_blank" rel="noopener">9 issues, latest: OPEC Monthly Oil Market Report – November 2026</a> (released 2025-09-11 to 2026-11-11); OPEC Monthly Oil Market Report, table &#39;OPEC crude oil production based on direct communication, tb/d&#39;, footnote to row &#39;Saudi Arabia&#39;.</li><li><b>OPEC+ required production in force on 28 February 2026 (pre-war volume):</b> OPEC, <a href="https://www.opec.org/press-releases.html" target="_blank" rel="noopener">5 issues, latest: OPEC press release: Eight OPEC+ countries&#39; meeting of 1 March 2026: unwinding resumed, +206 kb/d in April 2026</a> (released 2025-11-02 to 2026-03-01); Required production table, page 2 of the eight-country press releases (image).</li><li><b>Brent forecast of February 2026 (pre-war price):</b> U.S. Energy Information Administration (EIA), <a href="https://www.eia.gov/outlooks/steo/outlook.php" target="_blank" rel="noopener">Short-Term Energy Outlook, February 2026</a> (released 2026-02-10); Table 2, PDF page 36, row &#39;Brent Spot Average&#39;.</li><li><b>Brent spot price (Arab Light differential):</b> U.S. Energy Information Administration (EIA), <a href="https://www.eia.gov/dnav/pet/hist/LeafHandler.ashx?n=PET&amp;s=RBRTE&amp;f=D" target="_blank" rel="noopener">Europe Brent Spot Price FOB (Dollars per Barrel), Daily</a> (released 2026-11-12); EIA workbook RBRTEd.xls, sheet &#39;Data 1&#39;.</li><li><b>Nominal GDP 2025 (per cent of GDP):</b> General Authority for Statistics (GASTAT), <a href="https://www.stats.gov.sa/en/statistics-tabs/-/categories/120038?tab=436312&amp;category=120038" target="_blank" rel="noopener">GDP and National Accounts Q2/2026</a> (released 2026-09-08); table 1.1: gross domestic product by main economic activities at current prices (million ).</li></ul></div>
+      
+      
+      
+      <div>Every number is calculated from the public releases listed above. The archived source files (with release and retrieval dates and checksums), the code and the checks are kept in the project's repository and are available on request. Author's calculations.</div>
+      
+      
+    </footer>
+  </div>
+  <script>
+    const GREY = {dark: "#333333", mid: "#858585", light: "#B8B8B8", ink: "#1a1a1a", grid: "#E5E7EB", muted: "#6B7280"};
+    const CFG = {displaylogo: false, responsive: true, modeBarButtonsToRemove: ["lasso2d", "select2d"]};
+    function baseLayout(extra) {
+      return Object.assign({font: {family: "-apple-system, Segoe UI, Helvetica, Arial, sans-serif", size: 12, color: "#1F2A44"},
+        paper_bgcolor: "#FFFFFF", plot_bgcolor: "#FFFFFF", margin: {l: 60, r: 20, t: 30, b: 50},
+        legend: {orientation: "h", y: 1.08, x: 0}, hovermode: "closest"}, extra || {});
+    }
+    function fmt(v, n) { return (v === null || v === undefined) ? "–" : (v > 0 ? "+" : "") + v.toFixed(n === undefined ? 1 : n); }
+  </script>
+  
+<script>
+const D = {"baselines": [{"key": "c1a", "label": "OPEC+ required production (c1a, headline)"}, {"key": "c1b", "label": "c1b: with the April increase"}, {"key": "c1c", "label": "c1c: January–February level"}, {"key": "yoy", "label": "Same month of 2025 (yoy)"}, {"key": "c1a_brent", "label": "c1a at Brent prices"}], "series": {"c1a": {"months": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct"], "periods": ["2026-01", "2026-02", "2026-03", "2026-04", "2026-05", "2026-06", "2026-07", "2026-08", "2026-09", "2026-10"], "price": [-0.14, 1.37, 11.49, 8.66, 11.15, 6.92, 5.98, 6.04, 9.52, 11.94], "volume": [-0.52, -0.78, -5.38, -8.02, -10.03, -5.61, -6.05, -5.01, -5.05, -2.24], "net": [-0.66, 0.59, 6.11, 0.65, 1.13, 1.31, -0.07, 1.02, 4.47, 9.7], "low": [-0.66, 0.59, 6.11, 0.65, 1.13, 1.31, -0.07, 1.02, 4.39, 9.7], "high": [-0.66, 0.59, 6.11, 0.65, 1.13, 1.31, -0.07, 1.02, 4.47, 9.73], "estimated": [false, false, false, false, false, false, false, false, true, true], "P": [62.8, 68.4, 121.3, 107.2, 122.1, 96.9, 87.9, 86.5, 109.0, 108.0], "Pc": [63.5, 61.9, 58.9, 55.9, 53.9, 52.9, 52.9, 51.9, 51.9, 50.9], "X": [6993.0, 7276.0, 4974.0, 3987.0, 3435.0, 3994.0, 4125.0, 4451.0, 4506.0, 6291.0], "Xc": [7259.0, 7704.0, 6900.0, 7265.0, 7111.0, 6492.0, 6896.0, 6788.0, 6597.0, 7200.0], "war": {"net": 24.3, "price": 71.7, "volume": -47.4, "pct_gdp": 1.91, "low": 24.2, "high": 24.3}, "sources": ["eia_rbrte_daily_20261112", "eia_steo_202602_base", "fred_sauccusma02stm_20260929", "jodi_world_primary_csv_20261117", "opec_momr_2026_03", "opec_momr_2026_04", "opec_momr_2026_05", "opec_momr_2026_06", "opec_momr_2026_07", "opec_momr_2026_08", "opec_momr_2026_09", "opec_momr_2026_10", "opec_momr_2026_11"]}, "c1b": {"months": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct"], "periods": ["2026-01", "2026-02", "2026-03", "2026-04", "2026-05", "2026-06", "2026-07", "2026-08", "2026-09", "2026-10"], "price": [-0.14, 1.37, 11.49, 8.71, 11.22, 6.96, 6.01, 6.07, 9.57, 11.99], "volume": [-0.52, -0.78, -5.38, -8.17, -10.2, -5.75, -6.18, -5.15, -5.2, -2.39], "net": [-0.66, 0.59, 6.11, 0.54, 1.02, 1.21, -0.17, 0.92, 4.37, 9.6], "low": [-0.66, 0.59, 6.11, 0.54, 1.02, 1.21, -0.17, 0.92, 4.29, 9.6], "high": [-0.66, 0.59, 6.11, 0.54, 1.02, 1.21, -0.17, 0.92, 4.37, 9.63], "estimated": [false, false, false, false, false, false, false, false, true, true], "P": [62.8, 68.4, 121.3, 107.2, 122.1, 96.9, 87.9, 86.5, 109.0, 108.0], "Pc": [63.5, 61.9, 58.9, 55.9, 53.9, 52.9, 52.9, 51.9, 51.9, 50.9], "X": [6993.0, 7276.0, 4974.0, 3987.0, 3435.0, 3994.0, 4125.0, 4451.0, 4506.0, 6291.0], "Xc": [7259.0, 7704.0, 6900.0, 7328.0, 7174.0, 6555.0, 6959.0, 6851.0, 6660.0, 7263.0], "war": {"net": 23.6, "price": 72.0, "volume": -48.4, "pct_gdp": 1.85, "low": 23.5, "high": 23.6}, "sources": ["eia_rbrte_daily_20261112", "eia_steo_202602_base", "fred_sauccusma02stm_20260929", "jodi_world_primary_csv_20261117", "opec_momr_2026_03", "opec_momr_2026_04", "opec_momr_2026_05", "opec_momr_2026_06", "opec_momr_2026_07", "opec_momr_2026_08", "opec_momr_2026_09", "opec_momr_2026_10", "opec_momr_2026_11"]}, "c1c": {"months": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct"], "periods": ["2026-01", "2026-02", "2026-03", "2026-04", "2026-05", "2026-06", "2026-07", "2026-08", "2026-09", "2026-10"], "price": [-0.14, 1.37, 11.48, 8.66, 11.15, 6.92, 5.98, 6.03, 9.51, 11.93], "volume": [-0.51, -0.77, -5.37, -8.01, -10.02, -5.6, -6.04, -5.01, -5.04, -2.23], "net": [-0.65, 0.6, 6.12, 0.65, 1.13, 1.32, -0.06, 1.03, 4.48, 9.71], "low": [-0.65, 0.6, 6.12, 0.65, 1.13, 1.32, -0.06, 1.03, 4.4, 9.71], "high": [-0.65, 0.6, 6.12, 0.65, 1.13, 1.32, -0.06, 1.03, 4.48, 9.74], "estimated": [false, false, false, false, false, false, false, false, true, true], "P": [62.8, 68.4, 121.3, 107.2, 122.1, 96.9, 87.9, 86.5, 109.0, 108.0], "Pc": [63.5, 61.9, 58.9, 55.9, 53.9, 52.9, 52.9, 51.9, 51.9, 50.9], "X": [6993.0, 7276.0, 4974.0, 3987.0, 3435.0, 3994.0, 4125.0, 4451.0, 4506.0, 6291.0], "Xc": [7255.0, 7700.0, 6896.0, 7261.0, 7107.0, 6488.0, 6892.0, 6784.0, 6593.0, 7196.0], "war": {"net": 24.4, "price": 71.7, "volume": -47.3, "pct_gdp": 1.91, "low": 24.3, "high": 24.4}, "sources": ["eia_rbrte_daily_20261112", "eia_steo_202602_base", "fred_sauccusma02stm_20260929", "jodi_world_primary_csv_20261117", "opec_momr_2026_03", "opec_momr_2026_04", "opec_momr_2026_05", "opec_momr_2026_06", "opec_momr_2026_07", "opec_momr_2026_08", "opec_momr_2026_09", "opec_momr_2026_10", "opec_momr_2026_11"]}, "yoy": {"months": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct"], "periods": ["2026-01", "2026-02", "2026-03", "2026-04", "2026-05", "2026-06", "2026-07", "2026-08", "2026-09", "2026-10"], "price": [-3.63, -1.97, 7.52, 5.53, 8.52, 3.96, 2.46, 2.54, 5.99, 8.53], "volume": [2.05, 1.5, -2.39, -5.82, -8.0, -5.4, -4.64, -4.79, -5.32, -2.19], "net": [-1.59, -0.47, 5.13, -0.3, 0.52, -1.44, -2.17, -2.24, 0.66, 6.34], "low": [-1.59, -0.47, 5.13, -0.3, 0.52, -1.44, -2.17, -2.24, 0.59, 6.34], "high": [-1.59, -0.47, 5.13, -0.3, 0.52, -1.44, -2.17, -2.24, 0.66, 6.37], "estimated": [false, false, false, false, false, false, false, false, true, true], "P": [62.8, 68.4, 121.3, 107.2, 122.1, 96.9, 87.9, 86.5, 109.0, 108.0], "Pc": [80.8, 78.6, 76.1, 70.9, 65.0, 70.8, 72.2, 71.4, 72.6, 66.9], "X": [6993.0, 7276.0, 4974.0, 3987.0, 3435.0, 3994.0, 4125.0, 4451.0, 4506.0, 6291.0], "Xc": [6074.0, 6548.0, 5755.0, 6167.0, 6192.0, 6141.0, 5994.0, 6407.0, 6460.0, 7099.0], "war": {"net": 6.5, "price": 45.1, "volume": -38.6, "pct_gdp": 0.51, "low": 6.4, "high": 6.5}, "sources": ["eia_rbrte_daily_20261112", "fred_sauccusma02stm_20260929", "jodi_world_primary_csv_20261117", "opec_momr_2026_03", "opec_momr_2026_04", "opec_momr_2026_05", "opec_momr_2026_06", "opec_momr_2026_07", "opec_momr_2026_08", "opec_momr_2026_09", "opec_momr_2026_10", "opec_momr_2026_11", "same month of 2025, actual"]}, "c1a_brent": {"months": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct"], "periods": ["2026-01", "2026-02", "2026-03", "2026-04", "2026-05", "2026-06", "2026-07", "2026-08", "2026-09", "2026-10"], "price": [0.0, 1.23, 7.57, 9.84, 8.2, 4.62, 4.74, 6.28, 9.85, 14.62], "volume": [-0.55, -0.81, -4.93, -8.67, -9.35, -5.3, -6.0, -5.29, -5.31, -2.51], "net": [-0.55, 0.42, 2.64, 1.17, -1.16, -0.67, -1.26, 0.99, 4.55, 12.11], "low": [-0.55, 0.42, 2.64, 1.17, -1.16, -0.67, -1.26, 0.99, 4.47, 12.11], "high": [-0.55, 0.42, 2.64, 1.17, -1.16, -0.67, -1.26, 0.99, 4.55, 12.15], "estimated": [false, false, false, false, false, false, false, false, true, true], "P": [66.6, 70.9, 103.1, 117.3, 107.1, 85.4, 83.8, 91.1, 114.2, 123.9], "Pc": [66.6, 65.0, 62.0, 59.0, 57.0, 56.0, 56.0, 55.0, 55.0, 54.0], "X": [6993.0, 7276.0, 4974.0, 3987.0, 3435.0, 3994.0, 4125.0, 4451.0, 4506.0, 6291.0], "Xc": [7259.0, 7704.0, 6900.0, 7265.0, 7111.0, 6492.0, 6896.0, 6788.0, 6597.0, 7200.0], "war": {"net": 18.4, "price": 65.7, "volume": -47.4, "pct_gdp": 1.44, "low": 18.3, "high": 18.4}, "sources": ["eia_rbrte_daily_20261112", "eia_steo_202602_base", "fred_sauccusma02stm_20260929", "jodi_world_primary_csv_20261117", "opec_momr_2026_03", "opec_momr_2026_04", "opec_momr_2026_05", "opec_momr_2026_06", "opec_momr_2026_07", "opec_momr_2026_08", "opec_momr_2026_09", "opec_momr_2026_10", "opec_momr_2026_11"]}}, "title": "USD 24.3 bn above the pre-war path, March–Oct 2026: higher prices outweighed the lost barrels in every war month but July", "gates": [{"check": "G2.1", "status": "pass", "value": "1.49e-14", "threshold": "1e-09", "description": "Price and volume effects sum exactly to the windfall (midpoint decomposition).", "detail": "260 gaps over 5 tables (midpoint, alternative, first order with cross term, Brent / differential split of the price effect); max 1.49e-14 in c1c 2026-07 (g21_gap_price_split)"}, {"check": "G2.3", "status": "pass", "value": "1", "threshold": "1", "description": "Every windfall number carries exactly one baseline; no table mixes baselines.", "detail": "28 tables; distinct baselines per table: max 1"}], "tables": ["output/tables/p02_windfall_c1a.csv", "output/tables/p02_windfall_c1b.csv", "output/tables/p02_windfall_c1c.csv", "output/tables/p02_windfall_yoy.csv", "output/tables/p02_windfall_c1a_brent.csv"], "data_sources": [{"what": "Arab Light price", "publisher": "OPEC", "publication": "33 issues, latest: OPEC Monthly Oil Market Report – November 2026", "table": "OPEC Monthly Oil Market Report, table 'Table 1 - 1: OPEC Reference Basket and selected crudes, US$/b', row 'Arab Light'", "released": "2024-03-12 to 2026-11-11", "link": "https://www.opec.org/monthly-oil-market-report.html"}, {"what": "Saudi crude exports and production (published months)", "publisher": "JODI (Joint Organisations Data Initiative)", "publication": "JODI-Oil World Database, world primary table", "table": "JODI-Oil World Database, primary table: REF_AREA=SA, ENERGY_PRODUCT=CRUDEOIL, FLOW_BREAKDOWN=TOTEXPSB, UNIT_MEASURE=KBD", "released": "2026-10-21", "link": "https://www.jodidata.org/oil/database/data-downloads.aspx"}, {"what": "Saudi crude production, OPEC secondary sources (estimated months)", "publisher": "OPEC", "publication": "32 issues, latest: OPEC Monthly Oil Market Report – November 2026", "table": "OPEC Monthly Oil Market Report, table 'OPEC (from May 2024: DoC) crude oil production based on secondary sources, tb/d', row 'Saudi Arabia'", "released": "2024-04-11 to 2026-11-11", "link": "https://www.opec.org/monthly-oil-market-report.html"}, {"what": "Saudi supply to the market, direct communication (range)", "publisher": "OPEC", "publication": "9 issues, latest: OPEC Monthly Oil Market Report – November 2026", "table": "OPEC Monthly Oil Market Report, table 'OPEC crude oil production based on direct communication, tb/d', footnote to row 'Saudi Arabia'", "released": "2025-09-11 to 2026-11-11", "link": "https://www.opec.org/monthly-oil-market-report.html"}, {"what": "OPEC+ required production in force on 28 February 2026 (pre-war volume)", "publisher": "OPEC", "publication": "5 issues, latest: OPEC press release: Eight OPEC+ countries' meeting of 1 March 2026: unwinding resumed, +206 kb/d in April 2026", "table": "Required production table, page 2 of the eight-country press releases (image)", "released": "2025-11-02 to 2026-03-01", "link": "https://www.opec.org/press-releases.html"}, {"what": "Brent forecast of February 2026 (pre-war price)", "publisher": "U.S. Energy Information Administration (EIA)", "publication": "Short-Term Energy Outlook, February 2026", "table": "Table 2, PDF page 36, row 'Brent Spot Average'", "released": "2026-02-10", "link": "https://www.eia.gov/outlooks/steo/outlook.php"}, {"what": "Brent spot price (Arab Light differential)", "publisher": "U.S. Energy Information Administration (EIA)", "publication": "Europe Brent Spot Price FOB (Dollars per Barrel), Daily", "table": "EIA workbook RBRTEd.xls, sheet 'Data 1'", "released": "2026-11-12", "link": "https://www.eia.gov/dnav/pet/hist/LeafHandler.ashx?n=PET&s=RBRTE&f=D"}, {"what": "Nominal GDP 2025 (per cent of GDP)", "publisher": "General Authority for Statistics (GASTAT)", "publication": "GDP and National Accounts Q2/2026", "table": "table 1.1: gross domestic product by main economic activities at current prices (million )", "released": "2026-09-08", "link": "https://www.stats.gov.sa/en/statistics-tabs/-/categories/120038?tab=436312&category=120038"}]};
+function draw(key) {
+  const s = D.series[key];
+  const w = s.war;
+  document.getElementById("s1").innerHTML = `March–Oct 2026: net <b>${fmt(w.net)}</b> USD bn = price <b>${fmt(w.price)}</b> + volume <b>${fmt(w.volume)}</b>; <b>${fmt(w.pct_gdp, 2)}%</b> of 2025 GDP; range for estimated months ${w.low.toFixed(1)} to ${w.high.toFixed(1)}.`;
+  const lab = s.months.map((m, i) => s.estimated[i] ? m + "*" : m);
+  const errP = s.high.map((h, i) => s.estimated[i] ? h - s.net[i] : 0), errM = s.low.map((l, i) => s.estimated[i] ? s.net[i] - l : 0);
+  Plotly.react("c1", [
+    {type: "bar", name: "Price effect", x: lab, y: s.price, marker: {color: GREY.dark}, hovertemplate: "%{x}: price %{y:+.2f} USD bn<extra></extra>"},
+    {type: "bar", name: "Volume effect", x: lab, y: s.volume, marker: {color: GREY.light}, hovertemplate: "%{x}: volume %{y:+.2f} USD bn<extra></extra>"},
+    {type: "scatter", mode: "markers", name: "Net", x: lab, y: s.net, marker: {color: GREY.ink, size: 10, line: {color: "#fff", width: 2}},
+     error_y: {type: "data", symmetric: false, array: errP, arrayminus: errM, color: GREY.ink, thickness: 1.5, width: 0},
+     hovertemplate: "%{x}: net %{y:+.2f} USD bn<extra></extra>"}
+  ], baseLayout({barmode: "relative", yaxis: {title: "USD bn", zeroline: true, zerolinecolor: GREY.muted, gridcolor: GREY.grid},
+                 xaxis: {title: "* estimated month (vertical line: D-027 range)"}}), CFG);
+  const tb = document.querySelector("#t1 tbody");
+  tb.innerHTML = s.periods.map((p, i) => `<tr><td>${s.months[i]} ${p.slice(0,4)}</td><td class="num">${s.P[i]}</td><td class="num">${s.Pc[i]}</td><td class="num">${s.X[i]}</td><td class="num">${s.Xc[i]}</td><td class="num">${fmt(s.price[i],2)}</td><td class="num">${fmt(s.volume[i],2)}</td><td class="num"><b>${fmt(s.net[i],2)}</b></td><td>${s.estimated[i] ? "exports estimated" : ""}</td></tr>`).join("");
+}
+document.getElementById("b1").addEventListener("change", e => draw(e.target.value));
+draw("c1a");
+</script>
+
+</body>
+</html>
