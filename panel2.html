@@ -29,6 +29,8 @@
     .pill.flag, .pill.fail { color: var(--flag); background: rgba(180,83,9,0.10); }
     .pill.info { color: var(--ink); background: rgba(31,42,68,0.06); font-weight: 500; }
     main { padding-block: 14px 24px; display: grid; gap: 16px; }
+    main > *, footer.panel > * { min-width: 0; }
+    footer.panel code { overflow-wrap: anywhere; }
     .controls { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; font-size: 13px; }
     .controls select { font: inherit; padding: 4px 6px; border: 1px solid var(--grey-soft); border-radius: 4px; background: var(--bg); color: var(--ink); max-width: 100%; }
     .summary { font-size: 13.5px; }
@@ -44,13 +46,17 @@
     td.num, th.num { text-align: right; }
     footer.panel { border-top: 1px solid var(--grey-soft); padding-block: 10px 28px; color: var(--grey); font-size: 12px; display: grid; gap: 6px; }
     footer.panel code { font-size: 11.5px; }
-    footer.panel .sources { color: var(--ink); font-size: 12.5px; }
+    footer.panel .sources { color: var(--ink); font-size: 12.5px; overflow-wrap: anywhere; min-width: 0; }
+    footer.panel .sources li { min-width: 0; overflow-wrap: anywhere; word-break: break-word; }
     footer.panel .sources ul { margin: 4px 0 0; padding-left: 18px; display: grid; gap: 3px; }
     footer.panel a { color: var(--accent); }
     .wip a { color: #7C2D12; }
     .wip { background: #FFF7ED; color: #7C2D12; border-bottom: 1px solid #FED7AA; font-size: 12.5px;
            padding: 6px max(16px, env(safe-area-inset-right, 0px)) 6px max(16px, env(safe-area-inset-left, 0px)); }
     .hero { display: grid; gap: 14px; padding-block: 8px 4px; }
+    .audio { border: 1px solid var(--grey-soft); border-radius: 6px; padding: 8px 14px; font-size: 13.5px; }
+    .audio .k { font-size: 12px; color: var(--grey); text-transform: uppercase; letter-spacing: 0.05em; margin-right: 8px; }
+    .audio .c { color: var(--grey); font-size: 12.5px; }
     .qs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     @media (max-width: 860px) { .qs { grid-template-columns: 1fr; } }
     .q { border: 1px solid var(--grey-soft); border-left: 3px solid var(--accent); border-radius: 6px; padding: 12px 14px; display: grid; gap: 6px; min-width: 0; }
@@ -72,7 +78,7 @@
   <nav class="topnav">
     <span class="brand">Hormuz incidence · data</span>
     <a href="index.html" class="">Overview</a>
-    <a href="panel1.html" class="">Saudi windfall</a><a href="panel2.html" class="active">Saudi budget &amp; reserves</a><a href="panel3.html" class="">Output vs income</a><a href="panel4.html" class="">13 exporters</a><a href="panel5.html" class="">Exposure vs outcome</a><a href="panel7.html" class="">Gas &amp; LNG</a><a href="panel6.html" class="">Data &amp; checks</a>
+    <a href="panel1.html" class="">Saudi windfall</a><a href="panel2.html" class="active">Saudi budget &amp; reserves</a><a href="panel3.html" class="">Output vs income</a><a href="panel4.html" class="">13 exporters</a><a href="panel5.html" class="">Exposure vs outcome</a><a href="panel7.html" class="">Gas &amp; LNG</a><a href="panel8.html" class="">Sensitivity</a><a href="panel6.html" class="">Data &amp; checks</a>
   </nav>
   <div class="wrap">
     <header class="panel">
